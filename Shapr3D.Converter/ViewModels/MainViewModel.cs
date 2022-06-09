@@ -13,9 +13,26 @@ using Windows.Storage.Pickers;
 
 namespace Shapr3D.Converter.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public interface IMainViewModel : INotifyPropertyChanged
     {
-        private IPersistedStore store;
+        RelayCommand AddCommand { get; }
+        RelayCommand CloseDetailsCommand { get; }
+        RelayCommand<ConverterOutputType> ConvertActionCommand { get; }
+        RelayCommand DeleteAllCommand { get; }
+        ObservableCollection<FileViewModel> Files { get; }
+        FileViewModel SelectedFile { get; set; }
+
+        event PropertyChangedEventHandler PropertyChanged;
+
+        void Add();
+        Task InitAsync();
+    }
+
+    public class MainViewModel : IMainViewModel
+    {
+        // Getter/setter backup fields
+        private IPersistedStore _persistedStore;
+        private FileViewModel _fileViewModel;
 
         public MainViewModel()
         {
@@ -27,41 +44,67 @@ namespace Shapr3D.Converter.ViewModels
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /* ============================================
+         * Public properties
+         * ============================================ */
+        public FileViewModel SelectedFile
+        {
+            get
+            {
+                return _fileViewModel;
+            }
+            set
+            {
+                if (_fileViewModel != value)
+                {
+                    _fileViewModel = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedFile)));
+                }
+            }
+        }
         public ObservableCollection<FileViewModel> Files { get; } = new ObservableCollection<FileViewModel>();
         public RelayCommand AddCommand { get; }
         public RelayCommand DeleteAllCommand { get; }
         public RelayCommand<ConverterOutputType> ConvertActionCommand { get; }
         public RelayCommand CloseDetailsCommand { get; }
 
-        private FileViewModel selectedFile;
-        public FileViewModel SelectedFile
+        /* ============================================
+         * Public methods
+         * ============================================ */
+
+        public async void Add()
         {
-            get
+            var picker = new FileOpenPicker();
+            picker.ViewMode = PickerViewMode.Thumbnail;
+            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            picker.FileTypeFilter.Add(".shapr");
+
+            StorageFile file = await picker.PickSingleFileAsync();
+            if (file != null)
             {
-                return selectedFile;
-            }
-            set
-            {
-                if (selectedFile != value)
-                {
-                    selectedFile = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedFile)));
-                }
+                var id = Guid.NewGuid();
+                var props = await file.GetBasicPropertiesAsync();
+                var model = new FileViewModel(id, file.Path, ConverterOutputTypeFlags.None, props.Size);
+                await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
+
+                Files.Add(model);
             }
         }
 
-
         public async Task InitAsync()
         {
-            store = new PersistedStore();
-            await store.InitAsync();
+            _persistedStore = new PersistedStore();
+            await _persistedStore.InitAsync();
 
-            foreach (var model in await store.GetAllAsync())
+            foreach (var model in await _persistedStore.GetAllAsync())
             {
                 Files.Add(new FileViewModel(model.Id, model.OriginalPath, model.ConvertedTypes, model.FileSize));
             }
         }
 
+        /* ============================================
+        * Private Methods
+        * ============================================ */
         private void CloseDetails()
         {
             SelectedFile = null;
@@ -85,28 +128,9 @@ namespace Shapr3D.Converter.ViewModels
             }
         }
 
-        public async void Add()
-        {
-            var picker = new FileOpenPicker();
-            picker.ViewMode = PickerViewMode.Thumbnail;
-            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            picker.FileTypeFilter.Add(".shapr");
-
-            StorageFile file = await picker.PickSingleFileAsync();
-            if (file != null)
-            {
-                var id = Guid.NewGuid();
-                var props = await file.GetBasicPropertiesAsync();
-                var model = new FileViewModel(id, file.Path, ConverterOutputTypeFlags.None, props.Size);
-                await store.AddOrUpdateAsync(model.ToModelEntity());
-
-                Files.Add(model);
-            }
-        }
-
         private async Task ConvertFile(FileViewModel model, ConverterOutputType type)
         {
-            var state = selectedFile.ConversionInfos[type];
+            var state = _fileViewModel.ConversionInfos[type];
             Progress<int> progress = new Progress<int>((p) =>
             {
                 state.Progress = p;
@@ -119,7 +143,7 @@ namespace Shapr3D.Converter.ViewModels
                 await Convert(model, progress, type);
                 state.State = ConversionInfo.ConversionState.Converted;
 
-                await store.AddOrUpdateAsync(model.ToModelEntity());
+                await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
             }
             catch (TaskCanceledException)
             {
@@ -148,7 +172,7 @@ namespace Shapr3D.Converter.ViewModels
                 model.CancelConversions();
             }
 
-            await store.DeleteAllAsync();
+            await _persistedStore.DeleteAllAsync();
 
             SelectedFile = null;
             Files.Clear();
