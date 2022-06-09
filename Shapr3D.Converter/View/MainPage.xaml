@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Shapr3D.Converter.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:helpers="using:Shapr3D.Converter.Helpers"
+    xmlns:conv="using:Shapr3D.Converter.Ui.ValueConverters"
     xmlns:local="using:Shapr3D.Converter"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
@@ -13,8 +13,8 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <helpers:NotNullBooleanConverter x:Name="notNullBooleanConverter" />
-        <helpers:BooleanToVisibilityConverter x:Name="booleanToVisibilityConverter" />
+        <conv:NotNullBooleanConverter x:Name="notNullBooleanConverter" />
+        <conv:BooleanToVisibilityConverter x:Name="booleanToVisibilityConverter" />
     </Page.Resources>
     <Page.TopAppBar>
         <CommandBar>

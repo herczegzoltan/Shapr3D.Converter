@@ -117,7 +117,12 @@
       <HintPath>Converter\Converter.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Sharp3D.Converter.Ui\Sharp3D.Converter.Ui.csproj">
+      <Project>{93997740-ff09-4c79-b58b-bb5f78cc054f}</Project>
+      <Name>Sharp3D.Converter.Ui</Name>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

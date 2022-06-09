@@ -2,7 +2,6 @@
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
-
 namespace Shapr3D.Converter.View
 {
 
