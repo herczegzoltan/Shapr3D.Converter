@@ -59,9 +59,29 @@ namespace Shapr3D.Converter.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
-    public class FileViewModel : INotifyPropertyChanged
+    public interface IFileViewModel : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        Dictionary<ConverterOutputType, ConversionInfo> ConversionInfos { get; }
+        string FileSizeFormatted { get; }
+        Guid Id { get; }
+        bool IsConverting { get; }
+        string Name { get; }
+        ConversionInfo ObjConversionInfo { get; }
+        string OriginalPath { get; }
+        ConversionInfo StepConversionInfo { get; }
+        ConversionInfo StlConversionInfo { get; }
+
+        event PropertyChangedEventHandler PropertyChanged;
+
+        void CancelConversion(ConverterOutputType type);
+        void CancelConversions();
+        ModelEntity ToModelEntity();
+    }
+
+    public class FileViewModel : IFileViewModel
+    {
+        // Getter/setter backup fields
+        private readonly ulong _fileSizeFormatted;
 
         public FileViewModel(Guid id, string originalPath, ConverterOutputTypeFlags converterOutputTypes, ulong fileSize)
         {
@@ -81,21 +101,27 @@ namespace Shapr3D.Converter.ViewModels
             var nameLower = Path.GetFileNameWithoutExtension(originalPath).ToLower().Replace("_", " ");
             Name = nameLower.Substring(0, 1).ToUpper() + nameLower.Substring(1);
 
-            this.fileSize = fileSize;
+            this._fileSizeFormatted = fileSize;
         }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /* ============================================
+        * Public properties
+        * ============================================ */
         public Guid Id { get; }
         public string OriginalPath { get; }
         public string Name { get; }
 
         public Dictionary<ConverterOutputType, ConversionInfo> ConversionInfos { get; } = new Dictionary<ConverterOutputType, ConversionInfo>();
-
         public ConversionInfo ObjConversionInfo => ConversionInfos[ConverterOutputType.Obj];
         public ConversionInfo StepConversionInfo => ConversionInfos[ConverterOutputType.Step];
         public ConversionInfo StlConversionInfo => ConversionInfos[ConverterOutputType.Stl];
-
         public bool IsConverting => ConversionInfos.Any(state => state.Value.State == ConversionInfo.ConversionState.Converting);
 
+        /* ============================================
+         * Public methods
+         * ============================================ */
         public void CancelConversion(ConverterOutputType type)
         {
             // TODO
@@ -109,20 +135,11 @@ namespace Shapr3D.Converter.ViewModels
             }
         }
 
-        private readonly ulong fileSize;
         public string FileSizeFormatted
         {
             get
             {
-                return string.Format("{0} megabytes", ((double)fileSize / 1024 / 1024).ToString("0.00"));
-            }
-        }
-
-        private void OnConvertingStatePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ConversionInfo.State))
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsConverting)));
+                return string.Format("{0} megabytes", ((double)_fileSizeFormatted / 1024 / 1024).ToString("0.00"));
             }
         }
 
@@ -142,8 +159,22 @@ namespace Shapr3D.Converter.ViewModels
                 Id = Id,
                 ConvertedTypes = convertedTypes,
                 OriginalPath = OriginalPath,
-                FileSize = fileSize,
+                FileSize = _fileSizeFormatted,
             };
         }
+
+
+        /* ============================================
+        * Private Methods
+        * ============================================ */
+
+        private void OnConvertingStatePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ConversionInfo.State))
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsConverting)));
+            }
+        }
+
     }
 }
