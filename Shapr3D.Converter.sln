@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29905.134
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shapr3D.Converter", "Shapr3D.Converter\Shapr3D.Converter.csproj", "{099C9F3A-58C4-4F80-8EB7-FF5BCF2749BD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{099C9F3A-58C4-4F80-8EB7-FF5BCF2749BD}.Debug|x64.ActiveCfg = Debug|x64
+		{099C9F3A-58C4-4F80-8EB7-FF5BCF2749BD}.Debug|x64.Build.0 = Debug|x64
+		{099C9F3A-58C4-4F80-8EB7-FF5BCF2749BD}.Debug|x64.Deploy.0 = Debug|x64
+		{099C9F3A-58C4-4F80-8EB7-FF5BCF2749BD}.Release|x64.ActiveCfg = Release|x64
+		{099C9F3A-58C4-4F80-8EB7-FF5BCF2749BD}.Release|x64.Build.0 = Release|x64
+		{099C9F3A-58C4-4F80-8EB7-FF5BCF2749BD}.Release|x64.Deploy.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {33C92651-6B25-4BF6-8DBE-E61CBC31C1ED}
+	EndGlobalSection
+EndGlobal

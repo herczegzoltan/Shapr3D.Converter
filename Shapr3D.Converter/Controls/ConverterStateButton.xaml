@@ -1,0 +1,18 @@
+﻿<UserControl
+    x:Class="Shapr3D.Converter.Controls.ConverterStateButton"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Shapr3D.Converter.Controls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="300"
+    d:DesignWidth="400"
+    mc:Ignorable="d">
+
+    <Button Command="{x:Bind Command}" CommandParameter="{x:Bind CommandParameter}">
+        <StackPanel MinHeight="40">
+            <TextBlock Text="{x:Bind Text, Mode=OneWay}" />
+            <TextBlock Foreground="#00a7ff" Text="{x:Bind Progress, Mode=OneWay}" />
+        </StackPanel>
+    </Button>
+</UserControl>

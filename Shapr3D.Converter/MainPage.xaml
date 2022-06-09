@@ -1,0 +1,97 @@
+﻿<Page
+    x:Class="Shapr3D.Converter.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Shapr3D.Converter.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="using:Shapr3D.Converter.Helpers"
+    xmlns:local="using:Shapr3D.Converter"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:vms="using:Shapr3D.Converter.ViewModels"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <helpers:NotNullBooleanConverter x:Name="notNullBooleanConverter" />
+        <helpers:BooleanToVisibilityConverter x:Name="booleanToVisibilityConverter" />
+    </Page.Resources>
+    <Page.TopAppBar>
+        <CommandBar>
+            <AppBarButton
+                Command="{x:Bind ViewModel.AddCommand}"
+                Icon="Add"
+                Label="Convert new file" />
+            <AppBarButton
+                Command="{x:Bind ViewModel.DeleteAllCommand}"
+                Icon="Delete"
+                Label="Delete All" />
+        </CommandBar>
+    </Page.TopAppBar>
+
+    <SplitView
+        x:Name="splitPane"
+        DisplayMode="Inline"
+        IsPaneOpen="{x:Bind ViewModel.SelectedFile, Mode=OneWay, Converter={StaticResource notNullBooleanConverter}}"
+        PaneBackground="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
+        <SplitView.Pane>
+            <ScrollViewer>
+                <StackPanel Margin="12" Orientation="Vertical">
+
+                    <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
+                        <Button Command="{x:Bind ViewModel.CloseDetailsCommand}">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72B;" />
+                        </Button>
+                        <TextBlock
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="18"
+                            Text="{x:Bind ViewModel.SelectedFile.Name, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap" />
+                    </StackPanel>
+                    <TextBlock Text="Original file path:" />
+                    <TextBlock Text="{x:Bind ViewModel.SelectedFile.OriginalPath, Mode=OneWay}" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,12,0,0" Text="Original file size:" />
+                    <TextBlock Text="{x:Bind ViewModel.SelectedFile.FileSizeFormatted, Mode=OneWay}" />
+                    <StackPanel
+                        Margin="0,24,0,0"
+                        HorizontalAlignment="Stretch"
+                        Orientation="Vertical">
+                        <StackPanel Orientation="Vertical">
+                            <controls:ConverterStateButton
+                                Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
+                                CommandParameter="{x:Bind vms:ConverterOutputType.Obj}"
+                                ConversionState="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.State, Mode=OneWay}"
+                                Progress="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.Progress, Mode=OneWay}"
+                                Text="Shapr to .Obj" />
+                            <controls:ConverterStateButton
+                                Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
+                                CommandParameter="{x:Bind vms:ConverterOutputType.Stl}"
+                                ConversionState="{x:Bind ViewModel.SelectedFile.StlConversionInfo.State, Mode=OneWay}"
+                                Progress="{x:Bind ViewModel.SelectedFile.StlConversionInfo.Progress, Mode=OneWay}"
+                                Text="Shapr to .Stl" />
+                            <controls:ConverterStateButton
+                                Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
+                                CommandParameter="{x:Bind vms:ConverterOutputType.Step}"
+                                ConversionState="{x:Bind ViewModel.SelectedFile.StepConversionInfo.State, Mode=OneWay}"
+                                Progress="{x:Bind ViewModel.SelectedFile.StepConversionInfo.Progress, Mode=OneWay}"
+                                Text="Shapr to .Step" />
+                        </StackPanel>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </SplitView.Pane>
+
+        <!--  TODO  -->
+        <ListView
+            Margin="12"
+            DisplayMemberPath="Name"
+            IsItemClickEnabled="True"
+            ItemsSource="{x:Bind ViewModel.Files}"
+            SelectedItem="{x:Bind ViewModel.SelectedFile, Mode=TwoWay}"
+            SelectionMode="Single" />
+
+    </SplitView>
+</Page>
