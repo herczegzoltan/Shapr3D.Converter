@@ -3,12 +3,11 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
 
-namespace Shapr3D.Converter
+namespace Shapr3D.Converter.View
 {
 
     public sealed partial class MainPage : Page
     {
-
         public MainViewModel ViewModel { get; set; }
 
         public MainPage()
