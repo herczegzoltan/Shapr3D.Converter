@@ -1,4 +1,5 @@
 ﻿using Shapr3D.Converter.Datasource;
+using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Helpers;
 using System;
 using System.Collections.Generic;
@@ -56,13 +57,6 @@ namespace Shapr3D.Converter.ViewModels
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-    }
-
-    public enum ConverterOutputType
-    {
-        Stl,
-        Obj,
-        Step
     }
 
     public class FileViewModel : INotifyPropertyChanged

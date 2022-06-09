@@ -8,7 +8,7 @@
     xmlns:local="using:Shapr3D.Converter"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:vms="using:Shapr3D.Converter.ViewModels"
+    xmlns:vms="using:Shapr3D.Converter.Enums"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 

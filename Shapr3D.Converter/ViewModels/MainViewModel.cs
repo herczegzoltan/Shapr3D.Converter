@@ -1,5 +1,6 @@
 ﻿using Converter;
 using Shapr3D.Converter.Datasource;
+using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Helpers;
 using System;
 using System.Collections.Generic;
