@@ -1,6 +1,7 @@
 ﻿using Shapr3D.Converter.Datasource;
 using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Helpers;
+using Shapr3D.Converter.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,58 +10,6 @@ using System.Linq;
 
 namespace Shapr3D.Converter.ViewModels
 {
-    public class ConversionInfo : INotifyPropertyChanged
-    {
-        public enum ConversionState
-        {
-            NotStarted,
-            Converting,
-            Converted
-        }
-
-        private ConversionState state;
-        private int progress;
-
-        public ConversionInfo(bool isConverted)
-        {
-            State = isConverted ? ConversionState.Converted : ConversionState.NotStarted;
-            if (isConverted)
-            {
-                Progress = 100;
-            }
-        }
-
-        public ConversionState State
-        {
-            get => state;
-            set
-            {
-                if (state != value)
-                {
-                    state = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(State)));
-                }
-            }
-        }
-
-        public int Progress
-        {
-            get => progress;
-            set
-            {
-                if (progress != value)
-                {
-                    progress = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Progress)));
-                }
-            }
-        }
-
-        public bool IsCancellationRequested { get; set; }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-    }
-
     public interface IFileViewModel : INotifyPropertyChanged
     {
         Dictionary<ConverterOutputType, ConversionInfo> ConversionInfos { get; }
@@ -119,7 +68,7 @@ namespace Shapr3D.Converter.ViewModels
         public ConversionInfo ObjConversionInfo => ConversionInfos[ConverterOutputType.Obj];
         public ConversionInfo StepConversionInfo => ConversionInfos[ConverterOutputType.Step];
         public ConversionInfo StlConversionInfo => ConversionInfos[ConverterOutputType.Stl];
-        public bool IsConverting => ConversionInfos.Any(state => state.Value.State == ConversionInfo.ConversionState.Converting);
+        public bool IsConverting => ConversionInfos.Any(state => state.Value.State == ConversionState.Converting);
 
         /* ============================================
          * Public methods
@@ -128,7 +77,7 @@ namespace Shapr3D.Converter.ViewModels
         public void CancelConversion(ConverterOutputType type)
         {
             // only if converting in progress
-            if (ConversionInfos[type].State == ConversionInfo.ConversionState.Converting)
+            if (ConversionInfos[type].State == ConversionState.Converting)
             {
                 ConversionInfos[type].IsCancellationRequested = true;
             }
@@ -155,7 +104,7 @@ namespace Shapr3D.Converter.ViewModels
             ConverterOutputTypeFlags convertedTypes = ConverterOutputTypeFlags.None;
             foreach (ConverterOutputType type in Enum.GetValues(typeof(ConverterOutputType)))
             {
-                if (ConversionInfos[type].State == ConversionInfo.ConversionState.Converted)
+                if (ConversionInfos[type].State == ConversionState.Converted)
                 {
                     convertedTypes |= type.ToFlag();
                 }

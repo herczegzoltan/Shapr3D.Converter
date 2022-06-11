@@ -1,4 +1,4 @@
-﻿using Shapr3D.Converter.ViewModels;
+﻿using Shapr3D.Converter.Enums;
 using System.Windows.Input;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -13,14 +13,14 @@ namespace Shapr3D.Converter.Controls
             InitializeComponent();
         }
 
-        public ConversionInfo.ConversionState ConversionState
+        public ConversionState ConversionState
         {
-            get { return (ConversionInfo.ConversionState)GetValue(ConversionStateProperty); }
+            get { return (ConversionState)GetValue(ConversionStateProperty); }
             set { SetValue(ConversionStateProperty, value); }
         }
 
         public static readonly DependencyProperty ConversionStateProperty =
-            DependencyProperty.Register(nameof(ConversionState), typeof(ConversionInfo.ConversionState), typeof(ConverterStateButton), new PropertyMetadata(ConversionInfo.ConversionState.NotStarted));
+            DependencyProperty.Register(nameof(ConversionState), typeof(ConversionState), typeof(ConverterStateButton), new PropertyMetadata(ConversionState.NotStarted));
 
         public double Progress
         {

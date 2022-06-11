@@ -118,13 +118,13 @@ namespace Shapr3D.Converter.ViewModels
             var state = SelectedFile.ConversionInfos[type];
             switch (state.State)
             {
-                case ConversionInfo.ConversionState.NotStarted:
+                case ConversionState.NotStarted:
                     await ConvertFile(SelectedFile, type);
                     break;
-                case ConversionInfo.ConversionState.Converting:
+                case ConversionState.Converting:
                     SelectedFile.CancelConversion(type);
                     break;
-                case ConversionInfo.ConversionState.Converted:
+                case ConversionState.Converted:
                     Save(SelectedFile, type);
                     break;
             }
@@ -138,7 +138,7 @@ namespace Shapr3D.Converter.ViewModels
                 state.Progress = p;
             });
 
-            state.State = ConversionInfo.ConversionState.Converting;
+            state.State = ConversionState.Converting;
 
             try
             {
@@ -146,13 +146,13 @@ namespace Shapr3D.Converter.ViewModels
 
                 if (state.IsCancellationRequested)
                 {
-                    state.State = ConversionInfo.ConversionState.NotStarted;
+                    state.State = ConversionState.NotStarted;
                     state.Progress = 0;
                     state.IsCancellationRequested = false;
                 }
                 else
                 {
-                    state.State = ConversionInfo.ConversionState.Converted;
+                    state.State = ConversionState.Converted;
                 }
 
                 await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
@@ -161,7 +161,7 @@ namespace Shapr3D.Converter.ViewModels
             {
                 state.Progress = 0;
                 //state.IsCancellationRequested = false;
-                state.State = ConversionInfo.ConversionState.NotStarted;
+                state.State = ConversionState.NotStarted;
             }
         }
 
