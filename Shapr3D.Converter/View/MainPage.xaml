@@ -9,8 +9,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:vms="using:Shapr3D.Converter.Enums"
+    xmlns:fileMain="using:Shapr3D.Converter.View.Pages.SelectedFile"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    >
 
     <Page.Resources>
         <conv:NotNullBooleanConverter x:Name="notNullBooleanConverter" />
@@ -28,7 +30,6 @@
                 Label="Delete All" />
         </CommandBar>
     </Page.TopAppBar>
-
     <SplitView
         x:Name="splitPane"
         DisplayMode="Inline"
@@ -37,7 +38,6 @@
         <SplitView.Pane>
             <ScrollViewer>
                 <StackPanel Margin="12" Orientation="Vertical">
-
                     <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
                         <Button Command="{x:Bind ViewModel.CloseDetailsCommand}">
                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72B;" />
@@ -54,6 +54,7 @@
                     <TextBlock Text="{x:Bind ViewModel.SelectedFile.OriginalPath, Mode=OneWay}" TextWrapping="Wrap" />
                     <TextBlock Margin="0,12,0,0" Text="Original file size:" />
                     <TextBlock Text="{x:Bind ViewModel.SelectedFile.FileSizeFormatted, Mode=OneWay}" />
+
                     <StackPanel
                         Margin="0,24,0,0"
                         HorizontalAlignment="Stretch"
@@ -79,19 +80,42 @@
                                 Text="Shapr to .Step" />
                         </StackPanel>
                     </StackPanel>
-
                 </StackPanel>
             </ScrollViewer>
         </SplitView.Pane>
 
         <!--  TODO  -->
-        <ListView
+        <!--<ListView
             Margin="12"
             DisplayMemberPath="Name"
             IsItemClickEnabled="True"
             ItemsSource="{x:Bind ViewModel.Files}"
             SelectedItem="{x:Bind ViewModel.SelectedFile, Mode=TwoWay}"
-            SelectionMode="Single" />
+            SelectionMode="Single" >
 
+        </ListView>-->
+        
+        <!--WORKING-->
+        <ListView 
+            Margin="12"
+            ItemsSource="{x:Bind ViewModel.Files}"
+            SelectedItem="{x:Bind ViewModel.SelectedFile, Mode=TwoWay}"
+            SelectionMode="Single"
+            IsItemClickEnabled="True"
+            Background="White">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="10" Width="150" Height="170" >
+                        <Image Source="/Assets/shapr3d.png" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Name}" Foreground="Black"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
     </SplitView>
 </Page>
