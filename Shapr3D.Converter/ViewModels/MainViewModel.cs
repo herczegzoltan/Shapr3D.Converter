@@ -1,6 +1,7 @@
 ﻿using Converter;
 using Shapr3D.Converter.Datasource;
 using Shapr3D.Converter.Enums;
+using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Helpers;
 using System;
 using System.Collections.Generic;
@@ -237,8 +238,7 @@ namespace Shapr3D.Converter.ViewModels
             var currentFile = model.ConversionInfos[outputType];
 
             // ------------------------------
-
-            var splitted = Split(b, 100);
+            var splitted = b.Split(100);
 
             int taskResolved = 0;
             currentFile.ConvertedFile = new List<byte>();
@@ -273,19 +273,6 @@ namespace Shapr3D.Converter.ViewModels
                     progress.Report(0);
                     return;                
                 }
-            }
-        }
-
-        public static IEnumerable<byte[]> Split(/*this*/ byte[] value, int bufferLength)
-        {
-            int countOfArray = value.Length / bufferLength;
-            if (value.Length % bufferLength > 0) 
-            {
-                countOfArray++;
-            }
-            for (int i = 0; i < countOfArray; i++)
-            {
-                yield return value.Skip(i * bufferLength).Take(bufferLength).ToArray();
             }
         }
     }

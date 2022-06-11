@@ -56,6 +56,7 @@
     <Compile Include="Enums\ConverterOutputTypeFlags.cs" />
     <Compile Include="Datasource\IPersistedStore.cs" />
     <Compile Include="Datasource\PersistedStore.cs" />
+    <Compile Include="Extensions\ByteArraySplitToChunksExtensions.cs" />
     <Compile Include="Extensions\ConverterOutputTypeFlagsExtensions.cs" />
     <Compile Include="Helpers\Converters.cs" />
     <Compile Include="Helpers\RelayCommand.cs" />
