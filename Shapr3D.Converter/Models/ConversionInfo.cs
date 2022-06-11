@@ -46,7 +46,6 @@ namespace Shapr3D.Converter.Models
 
         public List<byte> ConvertedFile { get; set; }
         public bool IsCancellationRequested { get; set; }
-
         public event PropertyChangedEventHandler PropertyChanged;
     }
 }

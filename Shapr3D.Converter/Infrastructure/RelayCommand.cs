@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace Shapr3D.Converter.Helpers
+namespace Shapr3D.Converter.Infrastructure
 {
     // Copied from https://github.com/microsoft/uwp-shop-analytics-sample/blob/master/UWPShop.Client/Helpers/RelayCommand.cs
     public class RelayCommand : ICommand
