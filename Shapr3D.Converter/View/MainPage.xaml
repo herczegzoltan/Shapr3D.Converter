@@ -5,17 +5,15 @@
     xmlns:controls="using:Shapr3D.Converter.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:conv="using:Shapr3D.Converter.Ui.ValueConverters"
-    xmlns:local="using:Shapr3D.Converter"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:vms="using:Shapr3D.Converter.Enums"
-    xmlns:fileMain="using:Shapr3D.Converter.View.Pages.SelectedFile"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d"
-    >
+    Background="White">
+
     <Page.Resources>
         <conv:NotNullBooleanConverter x:Name="notNullBooleanConverter" />
         <conv:BooleanToVisibilityConverter x:Name="booleanToVisibilityConverter" />
+        <conv:EnumVisibilityConverter x:Name="enumVisibilityConverter"/>
     </Page.Resources>
     <Page.TopAppBar>
         <CommandBar>
@@ -93,15 +91,19 @@
             SelectionMode="Single" >
 
         </ListView>-->
-        
-        <!--WORKING-->
+
         <ListView 
-            Margin="12"
             ItemsSource="{x:Bind ViewModel.Files}"
             SelectedItem="{x:Bind ViewModel.SelectedFile, Mode=TwoWay}"
             SelectionMode="Single"
             IsItemClickEnabled="True"
-            Background="White">
+            Background="White"
+            Margin="5">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Padding" Value="0,4"/>
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <ItemsWrapGrid Orientation="Horizontal"/>
@@ -109,9 +111,25 @@
             </ListView.ItemsPanel>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="10" Width="150" Height="170" >
-                        <Image Source="/Assets/shapr3d.png" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding Name}" Foreground="Black"/>
+                    <StackPanel Margin="5" Orientation="Vertical" Width="125" Height="180" Background="#eeefee" Spacing="20" Padding="5">
+                        <Image Source="/Assets/shapr3d.png"/>
+                        <TextBlock Text="{Binding Path=Name}" Foreground="Black"/>
+                        <ProgressBar IsIndeterminate="True" HorizontalAlignment="Center" Width="100"
+                                     Visibility="{Binding Path=IsConverting, Mode=OneWay, Converter={StaticResource booleanToVisibilityConverter}}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="5" Padding="5" HorizontalAlignment="Center">
+                            <Grid Visibility="{Binding ObjConversionInfo.State, Mode=OneWay, Converter={StaticResource enumVisibilityConverter}, ConverterParameter='Converted'}">
+                                <TextBlock Name="TextblockObj" Text="OBJ" TextAlignment="Center" Foreground="Green" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="2"/>
+                                <Rectangle Width="{Binding ElementName=TextblockObj, Path=ActualWidth}" Height="{Binding ElementName=TextblockObj, Path=ActualHeight}" StrokeDashArray="0.0 6.0 0.0" Stroke="Green" StrokeThickness="1"  />
+                            </Grid>
+                            <Grid Visibility="{Binding StlConversionInfo.State, Mode=OneWay, Converter={StaticResource enumVisibilityConverter}, ConverterParameter='Converted'}">
+                                <TextBlock Name="TextblockStl" Text="STL" TextAlignment="Center" Foreground="Red" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="2"/>
+                                <Rectangle Width="{Binding ElementName=TextblockStl, Path=ActualWidth}" Height="{Binding ElementName=TextblockStl, Path=ActualHeight}" StrokeDashArray="0.0 6.0 0.0" Stroke="Red" StrokeThickness="1"  />
+                            </Grid>
+                            <Grid Visibility="{Binding StepConversionInfo.State, Mode=OneWay, Converter={StaticResource enumVisibilityConverter}, ConverterParameter='Converted'}">
+                                <TextBlock Name="TextblockStep" Text="STEP" TextAlignment="Center" Foreground="Orange" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="2"/>
+                                <Rectangle Width="{Binding ElementName=TextblockStep, Path=ActualWidth}" Height="{Binding ElementName=TextblockStep, Path=ActualHeight}" StrokeDashArray="0.0 6.0 0.0" Stroke="Orange" StrokeThickness="1"  />
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
