@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -110,6 +112,7 @@ namespace Shapr3D.Converter.ViewModels
             SelectedFile = null;
         }
 
+        //when click
         private async void ConvertAction(ConverterOutputType type)
         {
             var state = SelectedFile.ConversionInfos[type];
@@ -124,7 +127,6 @@ namespace Shapr3D.Converter.ViewModels
                 case ConversionInfo.ConversionState.Converted:
                     Save(SelectedFile, type);
                     break;
-
             }
         }
 
@@ -141,13 +143,24 @@ namespace Shapr3D.Converter.ViewModels
             try
             {
                 await Convert(model, progress, type);
-                state.State = ConversionInfo.ConversionState.Converted;
+
+                if (state.IsCancellationRequested)
+                {
+                    state.State = ConversionInfo.ConversionState.NotStarted;
+                    state.Progress = 0;
+                    state.IsCancellationRequested = false;
+                }
+                else
+                {
+                    state.State = ConversionInfo.ConversionState.Converted;
+                }
 
                 await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
             }
             catch (TaskCanceledException)
             {
                 state.Progress = 0;
+                //state.IsCancellationRequested = false;
                 state.State = ConversionInfo.ConversionState.NotStarted;
             }
         }
@@ -162,6 +175,7 @@ namespace Shapr3D.Converter.ViewModels
             savePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
 
             StorageFile savedFile = await savePicker.PickSaveFileAsync();
+
             // TODO https://docs.microsoft.com/en-us/windows/uwp/files/
         }
 
@@ -180,9 +194,70 @@ namespace Shapr3D.Converter.ViewModels
 
         private async Task Convert(FileViewModel model, IProgress<int> progress, ConverterOutputType outputType)
         {
+            // model.ConversationInfo
+            // Select current file
             // TODO
-            var converted = ModelConverter.ConvertChunk(new byte[0]);
-            await Task.Delay(2000);
+            // fileview ba read file content
+            Random rnd = new Random();
+            Byte[] b = new Byte[500];
+            rnd.NextBytes(b);
+
+            var currentFile = model.ConversionInfos.FirstOrDefault(_ => _.Key == outputType);
+
+            // ------------------------------
+
+            var splitted = Split(b, 100);
+
+            int taskResolved = 0;
+
+            foreach (var value in splitted)
+            {
+                try
+                {
+                    if (!currentFile.Value.IsCancellationRequested)
+                    {
+                        var internalTask = await Task.Run(() => ModelConverter.ConvertChunk(value));
+
+                        if (progress != null)
+                        {
+                            taskResolved++;
+                            var percentage = (double)taskResolved / splitted.Count();
+                            percentage = percentage * 100;
+                            var pertentageInt = (int)Math.Round(percentage);
+                            progress.Report(pertentageInt);
+                        }
+                    }
+                    else
+                    {
+                        progress.Report(0);
+                        return;
+                    }
+                }
+                catch (ConversionFailedException ex)
+                {
+                    
+                    progress.Report(0);
+                    return;                
+                }
+            }
+        }
+
+        public double Map(double value, int fromSource, int toSource, int fromTarget, int toTarget)
+        {
+            return (value - fromSource) / (toSource - fromSource) * (toTarget - fromTarget) + fromTarget;
+        }
+
+        public static IEnumerable<byte[]> Split(/*this*/ byte[] value, int bufferLength)
+        {
+            int countOfArray = value.Length / bufferLength;
+            if (value.Length % bufferLength > 0) 
+            {
+                countOfArray++;
+            }
+            for (int i = 0; i < countOfArray; i++)
+            {
+                yield return value.Skip(i * bufferLength).Take(bufferLength).ToArray();
+            }
         }
     }
 }

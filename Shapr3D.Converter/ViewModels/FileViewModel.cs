@@ -56,6 +56,8 @@ namespace Shapr3D.Converter.ViewModels
             }
         }
 
+        public bool IsCancellationRequested { get; set; }
+
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
@@ -122,9 +124,14 @@ namespace Shapr3D.Converter.ViewModels
         /* ============================================
          * Public methods
          * ============================================ */
+        // this is called when directly clicked on the file
         public void CancelConversion(ConverterOutputType type)
         {
-            // TODO
+            // only if converting in progress
+            if (ConversionInfos[type].State == ConversionInfo.ConversionState.Converting)
+            {
+                ConversionInfos[type].IsCancellationRequested = true;
+            }
         }
 
         public void CancelConversions()
@@ -163,7 +170,6 @@ namespace Shapr3D.Converter.ViewModels
             };
         }
 
-
         /* ============================================
         * Private Methods
         * ============================================ */
@@ -175,6 +181,5 @@ namespace Shapr3D.Converter.ViewModels
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsConverting)));
             }
         }
-
     }
 }
