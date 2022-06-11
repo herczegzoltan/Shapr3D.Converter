@@ -9,7 +9,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -161,6 +160,7 @@ namespace Shapr3D.Converter.ViewModels
             }
             catch (TaskCanceledException)
             {
+                // Do I need this? or just throw a task cancelled exception?
                 state.Progress = 0;
                 //state.IsCancellationRequested = false;
                 state.State = ConversionState.NotStarted;
@@ -176,7 +176,7 @@ namespace Shapr3D.Converter.ViewModels
 
             savePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
             StorageFile savedFile = await savePicker.PickSaveFileAsync();
-
+            // TODO https://docs.microsoft.com/en-us/windows/uwp/files/
 
             // References from https://docs.microsoft.com/en-us/windows/uwp/files/best-practices-for-writing-to-files
             Int32 retryAttempts = 5;
@@ -210,10 +210,7 @@ namespace Shapr3D.Converter.ViewModels
                 // The operation was cancelled in the picker dialog.
             }
 
-            // TODO https://docs.microsoft.com/en-us/windows/uwp/files/
         }
-
-       
 
         private async void DeleteAll()
         {
@@ -228,6 +225,7 @@ namespace Shapr3D.Converter.ViewModels
             Files.Clear();
         }
 
+        // TODO
         private async Task Convert(FileViewModel model, IProgress<int> progress, ConverterOutputType outputType)
         {
             // Change to real file read!
@@ -269,7 +267,8 @@ namespace Shapr3D.Converter.ViewModels
                 }
                 catch (ConversionFailedException ex)
                 {
-                    
+
+                    // What to do with the ex?
                     progress.Report(0);
                     return;                
                 }

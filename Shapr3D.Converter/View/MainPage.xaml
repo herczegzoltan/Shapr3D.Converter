@@ -13,7 +13,6 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d"
     >
-
     <Page.Resources>
         <conv:NotNullBooleanConverter x:Name="notNullBooleanConverter" />
         <conv:BooleanToVisibilityConverter x:Name="booleanToVisibilityConverter" />

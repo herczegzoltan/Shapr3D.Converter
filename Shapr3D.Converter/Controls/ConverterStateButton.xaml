@@ -12,7 +12,7 @@
     <UserControl.Resources>
         <conv:EnumVisibilityConverter x:Name="enumVisibilityConverter"/>
     </UserControl.Resources>
-<Button Margin="10" HorizontalAlignment="Stretch" Command="{x:Bind Command}" CommandParameter="{x:Bind CommandParameter}">
+    <Button Margin="10" HorizontalAlignment="Stretch" Command="{x:Bind Command}" CommandParameter="{x:Bind CommandParameter}">
         <Grid>
             <Grid.Resources>
                 <Style TargetType="Border" >
