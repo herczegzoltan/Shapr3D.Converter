@@ -52,7 +52,7 @@ namespace Shapr3D.Converter.ViewModels
             var nameLower = Path.GetFileNameWithoutExtension(originalPath).ToLower().Replace("_", " ");
             Name = nameLower.Substring(0, 1).ToUpper() + nameLower.Substring(1);
 
-            this._fileSizeFormatted = fileSize;
+            _fileSizeFormatted = fileSize;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

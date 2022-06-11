@@ -146,6 +146,7 @@ namespace Shapr3D.Converter.ViewModels
 
                 if (state.IsCancellationRequested)
                 {
+                    // Do I need this? or just throw a task cancelled exception?
                     state.State = ConversionState.NotStarted;
                     state.Progress = 0;
                     state.IsCancellationRequested = false;
@@ -165,19 +166,53 @@ namespace Shapr3D.Converter.ViewModels
             }
         }
 
-        private async void Save(FileViewModel model, ConverterOutputType type)
+        private async void Save(FileViewModel model, ConverterOutputType outputType)
         {
             var savePicker = new FileSavePicker();
             savePicker.FileTypeChoices.Add
-                                  (string.Format("{0} file", type.ToString().ToLower()), new List<string>() { string.Format(".{0}", type.ToString().ToLower()) });
+                                  (string.Format("{0} file", outputType.ToString().ToLower()), new List<string>() { string.Format(".{0}", outputType.ToString().ToLower()) });
 
 
             savePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
-
             StorageFile savedFile = await savePicker.PickSaveFileAsync();
+
+
+            // References from https://docs.microsoft.com/en-us/windows/uwp/files/best-practices-for-writing-to-files
+            Int32 retryAttempts = 5;
+
+            const Int32 ERROR_ACCESS_DENIED = unchecked((Int32)0x80070005);
+            const Int32 ERROR_SHARING_VIOLATION = unchecked((Int32)0x80070020);
+
+            if (savedFile != null)
+            {
+                // Application now has read/write access to the picked file.
+                while (retryAttempts > 0)
+                {
+                    try
+                    {
+                        retryAttempts--;
+                        var convertedFile = model.ConversionInfos[outputType];
+
+                        await FileIO.WriteBytesAsync(savedFile, convertedFile.ConvertedFile.ToArray());
+                        break;
+                    }
+                    catch (Exception ex) when ((ex.HResult == ERROR_ACCESS_DENIED) ||
+                                               (ex.HResult == ERROR_SHARING_VIOLATION))
+                    {
+                        // This might be recovered by retrying, otherwise let the exception be raised.
+                        // The app can decide to wait before retrying.
+                    }
+                }
+            }
+            else
+            {
+                // The operation was cancelled in the picker dialog.
+            }
 
             // TODO https://docs.microsoft.com/en-us/windows/uwp/files/
         }
+
+       
 
         private async void DeleteAll()
         {
@@ -194,35 +229,34 @@ namespace Shapr3D.Converter.ViewModels
 
         private async Task Convert(FileViewModel model, IProgress<int> progress, ConverterOutputType outputType)
         {
-            // model.ConversationInfo
-            // Select current file
-            // TODO
-            // fileview ba read file content
+            // Change to real file read!
             Random rnd = new Random();
             Byte[] b = new Byte[500];
             rnd.NextBytes(b);
 
-            var currentFile = model.ConversionInfos.FirstOrDefault(_ => _.Key == outputType);
+            var currentFile = model.ConversionInfos[outputType];
 
             // ------------------------------
 
             var splitted = Split(b, 100);
 
             int taskResolved = 0;
-
+            currentFile.ConvertedFile = new List<byte>();
+            // why do I need to chuck? or any other way?
             foreach (var value in splitted)
             {
                 try
                 {
-                    if (!currentFile.Value.IsCancellationRequested)
+                    if (!currentFile.IsCancellationRequested)
                     {
-                        var internalTask = await Task.Run(() => ModelConverter.ConvertChunk(value));
+                        var convertedChunck = await Task.Run(() => ModelConverter.ConvertChunk(value));
+                        currentFile.ConvertedFile.AddRange(convertedChunck);
 
                         if (progress != null)
                         {
                             taskResolved++;
                             var percentage = (double)taskResolved / splitted.Count();
-                            percentage = percentage * 100;
+                            percentage *= 100;
                             var pertentageInt = (int)Math.Round(percentage);
                             progress.Report(pertentageInt);
                         }
@@ -240,11 +274,6 @@ namespace Shapr3D.Converter.ViewModels
                     return;                
                 }
             }
-        }
-
-        public double Map(double value, int fromSource, int toSource, int fromTarget, int toTarget)
-        {
-            return (value - fromSource) / (toSource - fromSource) * (toTarget - fromTarget) + fromTarget;
         }
 
         public static IEnumerable<byte[]> Split(/*this*/ byte[] value, int bufferLength)
