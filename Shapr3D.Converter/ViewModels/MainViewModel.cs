@@ -1,10 +1,9 @@
 ﻿using Converter;
 using Shapr3D.Converter.Datasource;
 using Shapr3D.Converter.Enums;
-using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Infrastructure;
+using Sharp3D.Converter.Ui.Dialogs;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -12,12 +11,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
-using Windows.UI.Xaml.Controls;
 
 namespace Shapr3D.Converter.ViewModels
 {
@@ -38,14 +35,20 @@ namespace Shapr3D.Converter.ViewModels
 
     public class MainViewModel : IMainViewModel
     {
-        // Getter/setter backup fields
+        // Infrastructure fields
+        private readonly IDialogService _dialogService;
         private IPersistedStore _persistedStore;
+        // Getter/setter backup fields
         private FileViewModel _fileViewModel;
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
-        public MainViewModel()
+
+        public MainViewModel(IDialogService dialogService, IPersistedStore persistedStore)
         {
+            _dialogService = dialogService;
+            _persistedStore = persistedStore;
+
             AddCommand = new RelayCommand(Add);
             DeleteAllCommand = new RelayCommand(DeleteAll);
             ConvertActionCommand = new RelayCommand<ConverterOutputType>(ConvertAction);
@@ -104,7 +107,7 @@ namespace Shapr3D.Converter.ViewModels
 
         public async Task InitAsync()
         {
-            _persistedStore = new PersistedStore();
+            //_persistedStore = new PersistedStore();
             await _persistedStore.InitAsync();
 
             foreach (var model in await _persistedStore.GetAllAsync())

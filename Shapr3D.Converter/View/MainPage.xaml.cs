@@ -1,4 +1,5 @@
-﻿using Shapr3D.Converter.ViewModels;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Shapr3D.Converter.ViewModels;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -13,7 +14,11 @@ namespace Shapr3D.Converter.View
         {
             InitializeComponent();
 
-            ViewModel = new MainViewModel();
+
+            var container = ((App)App.Current).Container;
+            ViewModel = (MainViewModel)ActivatorUtilities.GetServiceOrCreateInstance(container, typeof(MainViewModel));
+
+            //ViewModel = new MainViewModel();
 
             Loaded += MainPage_Loaded;
         }

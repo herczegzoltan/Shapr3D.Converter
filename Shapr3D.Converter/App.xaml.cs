@@ -1,4 +1,7 @@
-﻿using Shapr3D.Converter.View;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Shapr3D.Converter.Datasource;
+using Shapr3D.Converter.View;
+using Sharp3D.Converter.Ui.Dialogs;
 using System;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
@@ -9,9 +12,12 @@ namespace Shapr3D.Converter
 {
     sealed partial class App : Application
     {
+        public IServiceProvider Container { get; }
+
         public App()
         {
             InitializeComponent();
+            Container = ConfigureDependencyInjection();
         }
 
         protected override void OnLaunched(LaunchActivatedEventArgs e)
@@ -39,6 +45,16 @@ namespace Shapr3D.Converter
         void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
         {
             throw new Exception("Failed to load Page " + e.SourcePageType.FullName);
+        }
+
+        IServiceProvider ConfigureDependencyInjection()
+        {
+            var serviceCollection = new ServiceCollection();
+
+            serviceCollection.AddTransient<IDialogService, DialogService>();
+            serviceCollection.AddTransient<IPersistedStore, PersistedStore>();
+
+            return serviceCollection.BuildServiceProvider();
         }
     }
 }
