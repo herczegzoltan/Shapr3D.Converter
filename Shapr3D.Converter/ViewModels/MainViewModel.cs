@@ -4,14 +4,20 @@ using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Infrastructure;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
+using Windows.UI.Xaml.Controls;
 
 namespace Shapr3D.Converter.ViewModels
 {
@@ -35,6 +41,8 @@ namespace Shapr3D.Converter.ViewModels
         // Getter/setter backup fields
         private IPersistedStore _persistedStore;
         private FileViewModel _fileViewModel;
+        private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
+        const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
         public MainViewModel()
         {
@@ -64,6 +72,7 @@ namespace Shapr3D.Converter.ViewModels
                 }
             }
         }
+
         public ObservableCollection<FileViewModel> Files { get; } = new ObservableCollection<FileViewModel>();
         public RelayCommand AddCommand { get; }
         public RelayCommand DeleteAllCommand { get; }
@@ -142,7 +151,7 @@ namespace Shapr3D.Converter.ViewModels
 
             try
             {
-                await Convert(model, progress, type);
+                await Task.Run(() => Convert(model, progress, type));
 
                 if (state.IsCancellationRequested)
                 {
@@ -158,12 +167,21 @@ namespace Shapr3D.Converter.ViewModels
 
                 await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
             }
+            catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
+            {
+                // TODO
+                // Do I need to add a dialog with close and try again due error of access
+            }
             catch (TaskCanceledException)
             {
                 // Do I need this? or just throw a task cancelled exception?
                 state.Progress = 0;
                 //state.IsCancellationRequested = false;
                 state.State = ConversionState.NotStarted;
+            }
+            catch (ConversionFailedException) 
+            {
+
             }
         }
 
@@ -173,16 +191,13 @@ namespace Shapr3D.Converter.ViewModels
             savePicker.FileTypeChoices.Add
                                   (string.Format("{0} file", outputType.ToString().ToLower()), new List<string>() { string.Format(".{0}", outputType.ToString().ToLower()) });
 
-
             savePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
             StorageFile savedFile = await savePicker.PickSaveFileAsync();
+            
             // TODO https://docs.microsoft.com/en-us/windows/uwp/files/
 
             // References from https://docs.microsoft.com/en-us/windows/uwp/files/best-practices-for-writing-to-files
             Int32 retryAttempts = 5;
-
-            const Int32 ERROR_ACCESS_DENIED = unchecked((Int32)0x80070005);
-            const Int32 ERROR_SHARING_VIOLATION = unchecked((Int32)0x80070020);
 
             if (savedFile != null)
             {
@@ -197,8 +212,7 @@ namespace Shapr3D.Converter.ViewModels
                         await FileIO.WriteBytesAsync(savedFile, convertedFile.ConvertedFile.ToArray());
                         break;
                     }
-                    catch (Exception ex) when ((ex.HResult == ERROR_ACCESS_DENIED) ||
-                                               (ex.HResult == ERROR_SHARING_VIOLATION))
+                    catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
                     {
                         // This might be recovered by retrying, otherwise let the exception be raised.
                         // The app can decide to wait before retrying.
@@ -209,7 +223,6 @@ namespace Shapr3D.Converter.ViewModels
             {
                 // The operation was cancelled in the picker dialog.
             }
-
         }
 
         private async void DeleteAll()
@@ -228,51 +241,93 @@ namespace Shapr3D.Converter.ViewModels
         // TODO
         private async Task Convert(FileViewModel model, IProgress<int> progress, ConverterOutputType outputType)
         {
-            // Change to real file read!
-            Random rnd = new Random();
-            Byte[] b = new Byte[500];
-            rnd.NextBytes(b);
+            var storageFile = await StorageFile.GetFileFromPathAsync(model.OriginalPath);
+            Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Add(storageFile);
+            IBuffer buffer = await FileIO.ReadBufferAsync(storageFile);
+
+            byte[] bytes = buffer.ToArray();
+
+            //what if pressing cancel when creating chunks?
+            //var chunks = bytes.Select((s, i) => new { s, i })
+            //                      .GroupBy(x => x.i % 100)
+            //                      .Select(g => g.Select(x => x.s).ToList())
+            //                      .ToList();
+
+            int i = 0;
+            var chunks = from chunk in bytes
+                         group chunk by i++ % 100 into part
+                         select part.AsEnumerable();
 
             var currentFile = model.ConversionInfos[outputType];
 
-            // ------------------------------
-            var splitted = b.Split(100);
-
             int taskResolved = 0;
             currentFile.ConvertedFile = new List<byte>();
-            // why do I need to chuck? or any other way?
-            foreach (var value in splitted)
+
+            Debug.WriteLine(@"TEST3:");
+
+            // Note: How is it possible to run paralell and the result is in ordered too.
+            foreach (var item in chunks)
             {
                 try
                 {
+                    Debug.WriteLine(@"TEST:" + item.Count());
+
                     if (!currentFile.IsCancellationRequested)
                     {
-                        var convertedChunck = await Task.Run(() => ModelConverter.ConvertChunk(value));
+                        var convertedChunck = await Task.Run(() => ConvertChunk(item.ToArray()));
                         currentFile.ConvertedFile.AddRange(convertedChunck);
 
                         if (progress != null)
                         {
                             taskResolved++;
-                            var percentage = (double)taskResolved / splitted.Count();
+                            var percentage = (double)taskResolved / chunks.Count();
                             percentage *= 100;
                             var pertentageInt = (int)Math.Round(percentage);
-                            progress.Report(pertentageInt);
+                            await Task.Run(() => progress.Report(pertentageInt));
+
+                            Debug.WriteLine(@"TEST:" + pertentageInt);
                         }
-                    }
-                    else
-                    {
-                        progress.Report(0);
-                        return;
+                        else
+                        {
+                            await Task.Run(() => progress.Report(0));
+                            return;
+                        }
                     }
                 }
                 catch (ConversionFailedException ex)
                 {
-
                     // What to do with the ex?
-                    progress.Report(0);
-                    return;                
+                    await Task.Run(() => progress.Report(0));
+                    currentFile.State = ConversionState.NotStarted;
+                    return;
+                }
+                catch (Exception)
+                {
+                    throw;
                 }
             }
+        }
+
+        // Temp Convertchunk to remove delay
+        public static byte[] ConvertChunk(byte[] bytes)
+        {
+            int num = bytes.Length;
+            int num2 = 300000;
+            int num3 = (int)Math.Pow(2.0, num / 1000000) * 1000;
+            //Thread.Sleep((num3 > num2) ? num2 : num3);
+            byte[] array = new byte[num];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = bytes[num - i - 1];
+            }
+
+            //int num4 = new Random().Next(0, 1000);
+            //if (num4 == 0)
+            //{
+            //    throw new ConversionFailedException($"Conversion failed. Error code {num4}");
+            //}
+
+            return array;
         }
     }
 }
