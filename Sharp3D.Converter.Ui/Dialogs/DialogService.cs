@@ -17,7 +17,7 @@ namespace Sharp3D.Converter.Ui.Dialogs
             try
             {
                 Title = "Exception thrown";
-                Content = description;
+                Content = $"{ex.Message} {description}";
                 CloseButtonText = "Ok";
 
                 await ShowAsync();

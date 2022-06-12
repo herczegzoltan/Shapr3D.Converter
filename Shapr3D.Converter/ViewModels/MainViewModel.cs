@@ -174,6 +174,7 @@ namespace Shapr3D.Converter.ViewModels
             {
                 // TODO
                 // Do I need to add a dialog with close and try again due error of access
+                await _dialogService.ShowExceptionModalDialog(ex, $"{model.OriginalPath} (Read README.md for instructions.)");
             }
             catch (TaskCanceledException)
             {
@@ -182,9 +183,9 @@ namespace Shapr3D.Converter.ViewModels
                 //state.IsCancellationRequested = false;
                 state.State = ConversionState.NotStarted;
             }
-            catch (ConversionFailedException) 
+            catch (ConversionFailedException conversionFailException) 
             {
-
+                await _dialogService.ShowExceptionModalDialog(conversionFailException, "The file could not be converted");
             }
         }
 
