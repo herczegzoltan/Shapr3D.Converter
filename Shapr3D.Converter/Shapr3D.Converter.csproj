@@ -52,10 +52,6 @@
     <Compile Include="Controls\ConverterStateButton.xaml.cs">
       <DependentUpon>ConverterStateButton.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Datasource\ModelEntity.cs" />
-    <Compile Include="Enums\ConverterOutputTypeFlags.cs" />
-    <Compile Include="Datasource\IPersistedStore.cs" />
-    <Compile Include="Datasource\PersistedStore.cs" />
     <Compile Include="Extensions\ByteArraySplitToChunksExtensions.cs" />
     <Compile Include="Extensions\ConverterOutputTypeFlagsExtensions.cs" />
     <Compile Include="Infrastructure\RelayCommand.cs" />
@@ -106,11 +102,17 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite">
       <Version>3.1.10</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json">
+      <Version>6.0.0</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.9</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.UI.Xaml">
       <Version>2.4.3</Version>
+    </PackageReference>
+    <PackageReference Include="System.Configuration.ConfigurationManager">
+      <Version>6.0.0</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
@@ -119,13 +121,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Sharp3D.Converter.DataAccess\Sharp3D.Converter.DataAccess.csproj">
+      <Project>{3ED70823-AB45-491F-8D46-36B14A5FDE90}</Project>
+      <Name>Sharp3D.Converter.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Sharp3D.Converter.Models\Sharp3D.Converter.Models.csproj">
+      <Project>{1367D1A2-5CA5-419A-A9BB-78DD2D3CB4C0}</Project>
+      <Name>Sharp3D.Converter.Models</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Sharp3D.Converter.Ui\Sharp3D.Converter.Ui.csproj">
       <Project>{93997740-ff09-4c79-b58b-bb5f78cc054f}</Project>
       <Name>Sharp3D.Converter.Ui</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="DI\" />
+    <None Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

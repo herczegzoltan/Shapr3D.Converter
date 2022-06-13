@@ -1,7 +1,6 @@
-﻿using Shapr3D.Converter.Enums;
-using System;
+﻿using System;
 
-namespace Shapr3D.Converter.Datasource
+namespace Sharp3D.Converter.Models
 {
     public class ModelEntity
     {

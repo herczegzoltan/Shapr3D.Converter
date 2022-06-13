@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Shapr3D.Converter.Enums
+namespace Sharp3D.Converter.Models
 {
     [Flags]
     public enum ConverterOutputTypeFlags

@@ -13,8 +13,7 @@ namespace Shapr3D.Converter.View
         public MainPage()
         {
             InitializeComponent();
-
-
+            
             var container = ((App)App.Current).Container;
             ViewModel = (MainViewModel)ActivatorUtilities.GetServiceOrCreateInstance(container, typeof(MainViewModel));
 
@@ -25,7 +24,9 @@ namespace Shapr3D.Converter.View
 
         private async void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
-            await ViewModel.InitAsync();
+
+
+            //await ViewModel.InitAsync();
         }
     }
 }

@@ -1,7 +1,8 @@
 ﻿using Converter;
-using Shapr3D.Converter.Datasource;
 using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Infrastructure;
+using Sharp3D.Converter.DataAccess.Repository.IRepository;
+using Sharp3D.Converter.Models;
 using Sharp3D.Converter.Ui.Dialogs;
 using System;
 using System.Collections.Generic;
@@ -37,18 +38,19 @@ namespace Shapr3D.Converter.ViewModels
     {
         // Infrastructure fields
         private readonly IDialogService _dialogService;
-        private IPersistedStore _persistedStore;
+        private IUnitOfWork _unitOfWork;
         // Getter/setter backup fields
         private FileViewModel _fileViewModel;
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
 
-        public MainViewModel(IDialogService dialogService, IPersistedStore persistedStore)
+        public MainViewModel(IDialogService dialogService, IUnitOfWork unitOfWork)
         {
             _dialogService = dialogService;
-            _persistedStore = persistedStore;
+            _unitOfWork = unitOfWork;
 
+            InitAsync();
             AddCommand = new RelayCommand(Add);
             DeleteAllCommand = new RelayCommand(DeleteAll);
             ConvertActionCommand = new RelayCommand<ConverterOutputType>(ConvertAction);
@@ -99,7 +101,11 @@ namespace Shapr3D.Converter.ViewModels
                 var id = Guid.NewGuid();
                 var props = await file.GetBasicPropertiesAsync();
                 var model = new FileViewModel(id, file.Path, ConverterOutputTypeFlags.None, props.Size);
-                await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
+
+                await _unitOfWork.ModelEntity.Add(model.ToModelEntity());
+                await _unitOfWork.Save();
+                
+                //await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
 
                 Files.Add(model);
             }
@@ -107,10 +113,9 @@ namespace Shapr3D.Converter.ViewModels
 
         public async Task InitAsync()
         {
-            //_persistedStore = new PersistedStore();
-            await _persistedStore.InitAsync();
+            await _unitOfWork.ModelEntity.InitAsync();
 
-            foreach (var model in await _persistedStore.GetAllAsync())
+            foreach (var model in await _unitOfWork.ModelEntity.GetAllAsync())
             {
                 Files.Add(new FileViewModel(model.Id, model.OriginalPath, model.ConvertedTypes, model.FileSize));
             }
@@ -168,7 +173,8 @@ namespace Shapr3D.Converter.ViewModels
                     state.State = ConversionState.Converted;
                 }
 
-                await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
+                await _unitOfWork.ModelEntity.Update(model.ToModelEntity());
+                await _unitOfWork.Save();
             }
             catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
             {
@@ -236,7 +242,8 @@ namespace Shapr3D.Converter.ViewModels
                 model.CancelConversions();
             }
 
-            await _persistedStore.DeleteAllAsync();
+            await _unitOfWork.ModelEntity.DeleteAllAsync();
+            await _unitOfWork.Save();
 
             SelectedFile = null;
             Files.Clear();

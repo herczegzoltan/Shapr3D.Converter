@@ -1,8 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Shapr3D.Converter.Datasource;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Shapr3D.Converter.View;
+using Sharp3D.Converter.DataAccess.Data;
+using Sharp3D.Converter.DataAccess.Repository;
+using Sharp3D.Converter.DataAccess.Repository.IRepository;
 using Sharp3D.Converter.Ui.Dialogs;
 using System;
+using System.IO;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -51,8 +56,19 @@ namespace Shapr3D.Converter
         {
             var serviceCollection = new ServiceCollection();
 
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json");
+
+            var configuration = builder.Build();
+
+            serviceCollection.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite(configuration.GetSection("SQLite").Value));
+
+
             serviceCollection.AddTransient<IDialogService, DialogService>();
-            serviceCollection.AddTransient<IPersistedStore, PersistedStore>();
+            serviceCollection.AddScoped<IUnitOfWork, UnitOfWork>();
+            // Register view models here? like fileViewModel into mainviewmodel
 
             return serviceCollection.BuildServiceProvider();
         }
