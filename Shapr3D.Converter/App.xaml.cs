@@ -66,10 +66,10 @@ namespace Shapr3D.Converter
             serviceCollection.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite(configuration.GetSection("SQLite").Value));
 
-            serviceCollection.AddTransient<IDialogService, DialogService>();
-            serviceCollection.AddScoped<IUnitOfWork, UnitOfWork>();
-            serviceCollection.AddScoped<IFileConverterService, FileConverterService>();
-            serviceCollection.AddScoped<IFileReaderService, FileReaderService>();
+            serviceCollection.AddTransient<IDialogService, DialogService>(); // req
+            serviceCollection.AddSingleton<IUnitOfWork, UnitOfWork>();
+            serviceCollection.AddSingleton<IFileConverterService, FileConverterService>();
+            serviceCollection.AddSingleton<IFileReaderService, FileReaderService>();
             // Register view models here? like fileViewModel into mainviewmodel
 
             return serviceCollection.BuildServiceProvider();
