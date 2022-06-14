@@ -13,6 +13,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Windows.ApplicationModel.Resources;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 
@@ -40,13 +41,14 @@ namespace Shapr3D.Converter.ViewModels
         private IUnitOfWork _unitOfWork;
         private readonly IFileConverterService _fileConverterService;
         private readonly IFileReaderService _fileReaderService;
+        private readonly ResourceLoader _resourceLoader;
 
         // Getter/setter backup fields
-        private FileViewModel _fileViewModel;
+        private FileViewModel _selectedFile;
+        private const string FileTypeFilter = ".shapr";
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
-        public ICommand TreeViewLoadOnDemandCommand { get; set; }
 
         public MainViewModel(
             IDialogService dialogService,
@@ -58,6 +60,7 @@ namespace Shapr3D.Converter.ViewModels
             _unitOfWork = unitOfWork;
             _fileConverterService = fileConverterService;
             _fileReaderService = fileReaderService;
+            _resourceLoader = new ResourceLoader();
 
             // Rework Load with navigation to? 
             _ = InitAsync();
@@ -77,13 +80,13 @@ namespace Shapr3D.Converter.ViewModels
         {
             get
             {
-                return _fileViewModel;
+                return _selectedFile;
             }
             set
             {
-                if (_fileViewModel != value)
+                if (_selectedFile != value)
                 {
-                    _fileViewModel = value;
+                    _selectedFile = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedFile)));
                 }
             }
@@ -101,32 +104,48 @@ namespace Shapr3D.Converter.ViewModels
 
         public async void Add()
         {
-            var picker = new FileOpenPicker();
-            picker.ViewMode = PickerViewMode.Thumbnail;
-            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            picker.FileTypeFilter.Add(".shapr");
-
-            StorageFile file = await picker.PickSingleFileAsync();
-            if (file != null)
+            try
             {
-                var id = Guid.NewGuid();
-                var props = await file.GetBasicPropertiesAsync();
-                var model = new FileViewModel(id, file.Path, ConverterOutputTypeFlags.None, props.Size);
+                var picker = new FileOpenPicker
+                {
+                    ViewMode = PickerViewMode.Thumbnail,
+                    SuggestedStartLocation = PickerLocationId.PicturesLibrary,
+                };
+                picker.FileTypeFilter.Add(FileTypeFilter);
 
-                await _unitOfWork.ModelEntity.Add(model.ToModelEntity());
-                await _unitOfWork.Save();
-                
-                Files.Add(model);
+                StorageFile file = await picker.PickSingleFileAsync();
+                if (file != null)
+                {
+                    var id = Guid.NewGuid();
+                    var props = await file.GetBasicPropertiesAsync();
+                    var model = new FileViewModel(id, file.Path, ConverterOutputTypeFlags.None, props.Size);
+
+                    await _unitOfWork.ModelEntity.Add(model.ToModelEntity());
+                    await _unitOfWork.Save();
+
+                    Files.Add(model);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "adding a new file."));
             }
         }
 
         public async Task InitAsync()
         {
-            await _unitOfWork.ModelEntity.InitAsync();
-
-            foreach (var model in await _unitOfWork.ModelEntity.GetAllAsync())
+            try
             {
-                Files.Add(new FileViewModel(model.Id, model.OriginalPath, model.ConvertedTypes, model.FileSize));
+                await _unitOfWork.ModelEntity.InitAsync();
+
+                foreach (var model in await _unitOfWork.ModelEntity.GetAllAsync())
+                {
+                    Files.Add(new FileViewModel(model.Id, model.OriginalPath, model.ConvertedTypes, model.FileSize));
+                }
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "initializing."));
             }
         }
 
@@ -145,7 +164,7 @@ namespace Shapr3D.Converter.ViewModels
             switch (state.State)
             {
                 case ConversionState.NotStarted:
-                    await ConvertFile(SelectedFile, type);
+                    await ConvertFile(type);
                     break;
                 case ConversionState.Converting:
                     SelectedFile.CancelConversion(type);
@@ -156,45 +175,46 @@ namespace Shapr3D.Converter.ViewModels
             }
         }
 
-        private async Task ConvertFile(FileViewModel model, ConverterOutputType type)
+        private async Task ConvertFile(ConverterOutputType type)
         {
-            var conversionStatus = _fileViewModel.ConversionInfos[type];
-            conversionStatus.CancellationTokenSource = new CancellationTokenSource();
+            var conversionInfoOfSelectedFile = _selectedFile.ConversionInfos[type];
+            conversionInfoOfSelectedFile.CancellationTokenSource = new CancellationTokenSource();
 
             var progress = new Progress<int>((percentageComplete) =>
             {
-                conversionStatus.Progress = percentageComplete;
+                conversionInfoOfSelectedFile.Progress = percentageComplete;
             });
 
             try
             {
-                conversionStatus.State = ConversionState.Converting;
-                var input = await _fileReaderService.ReadFileIntoByteArrayAsync(model.OriginalPath);
-                var result = await _fileConverterService.ApplyConverterAndReportAsync(progress, conversionStatus.CancellationTokenSource, ConvertChunk, input);
-                conversionStatus.ConvertedResult = result;
+                conversionInfoOfSelectedFile.State = ConversionState.Converting;
+                var input = await _fileReaderService.ReadFileIntoByteArrayAsync(_selectedFile.OriginalPath);
+                var result = await _fileConverterService.ApplyConverterAndReportAsync(progress, conversionInfoOfSelectedFile.CancellationTokenSource, ConvertChunk, input);
+                conversionInfoOfSelectedFile.ConvertedResult = result;
 
-                conversionStatus.State = ConversionState.Converted;
-                await _unitOfWork.ModelEntity.Update(model.ToModelEntity());
+                conversionInfoOfSelectedFile.State = ConversionState.Converted;
+                await _unitOfWork.ModelEntity.Update(_selectedFile.ToModelEntity());
                 await _unitOfWork.Save();
             }
             catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
             {
-                await _dialogService.ShowExceptionModalDialog(ex, $"{model.OriginalPath} (Read README.md for instructions.)");
+                await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("ReadMeMessage"), _selectedFile.OriginalPath));
             }
             catch (OperationCanceledException)
             {
                 // Should I dispose CancellationTokenSource here or insude ApplyConverterAndReportAsync?
-                conversionStatus.Progress = 0;
-                conversionStatus.State = ConversionState.NotStarted;
-                await _dialogService.ShowOkModalDialog("Confirmation", "The conversion was cancelled.");
+                conversionInfoOfSelectedFile.Progress = 0;
+                conversionInfoOfSelectedFile.State = ConversionState.NotStarted;
+                
+                await _dialogService.ShowOkModalDialog(_resourceLoader.GetString("ConfirmationMessage"), _resourceLoader.GetString("CancelledMessage"));
             }
             catch (ConversionFailedException ex)
             {
-                await _dialogService.ShowExceptionModalDialog(ex, "The file could not be converted.");
+                await _dialogService.ShowExceptionModalDialog(ex, _resourceLoader.GetString("CouldNotConvertMessage"));
             }
             catch (Exception ex)
             {
-                await _dialogService.ShowExceptionModalDialog(ex, ex.StackTrace);
+                await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "converting the file."));
             }
         }
 
@@ -219,7 +239,8 @@ namespace Shapr3D.Converter.ViewModels
                         var convertedFile = model.ConversionInfos[outputType];
 
                         await FileIO.WriteBytesAsync(savedFile, convertedFile.ConvertedResult);
-                        await _dialogService.ShowOkModalDialog("Success", $"The file has been saved to {savedFile.Path}");
+                        await _dialogService.ShowOkModalDialog(_resourceLoader.GetString("SuccessMessage"),
+                           string.Format(_resourceLoader.GetString("SavedToMessage"), savedFile.Path));
                         break;
                     }
                 }
@@ -230,29 +251,38 @@ namespace Shapr3D.Converter.ViewModels
             }
             catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
             {
-                await _dialogService.ShowExceptionModalDialog(ex, $"{model.OriginalPath} (Read README.md for instructions.)");
+                await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("ReadMeMessage"), model.OriginalPath));
             }
             catch (Exception ex)
             {
-                await _dialogService.ShowExceptionModalDialog(ex, "Unexpected error occured during file save.");
+                await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "saving the file."));
             }
         }
 
         private async void DeleteAll()
         {
-            var result = await _dialogService.ShowBlockingQuestionModalDialog("Confirmation", "Are you sure you want to remove all files?");
-            if (result ?? false)
+            try
             {
-                foreach (var model in Files)
+                var result = await _dialogService.ShowBlockingQuestionModalDialog(
+                _resourceLoader.GetString("ConfirmationMessage"),
+                _resourceLoader.GetString("AreSureRemoveMessage"));
+                if (result ?? false)
                 {
-                    model.CancelConversions();
+                    foreach (var model in Files)
+                    {
+                        model.CancelConversions();
+                    }
+
+                    await _unitOfWork.ModelEntity.DeleteAllAsync();
+                    await _unitOfWork.Save();
+
+                    SelectedFile = null;
+                    Files.Clear();
                 }
-
-                await _unitOfWork.ModelEntity.DeleteAllAsync();
-                await _unitOfWork.Save();
-
-                SelectedFile = null;
-                Files.Clear();
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "delete all files."));
             }
         }
 
