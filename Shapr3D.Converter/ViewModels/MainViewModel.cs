@@ -1,6 +1,7 @@
 ﻿using Converter;
 using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Infrastructure;
+using Shapr3D.Converter.Services;
 using Sharp3D.Converter.DataAccess.Repository.IRepository;
 using Sharp3D.Converter.Models;
 using Sharp3D.Converter.Ui.Dialogs;
@@ -8,14 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using Windows.Storage.Streams;
 
 namespace Shapr3D.Converter.ViewModels
 {
@@ -39,18 +38,30 @@ namespace Shapr3D.Converter.ViewModels
         // Infrastructure fields
         private readonly IDialogService _dialogService;
         private IUnitOfWork _unitOfWork;
+        private readonly IFileConverterService _fileConverterService;
+        private readonly IFileReaderService _fileReaderService;
+
         // Getter/setter backup fields
         private FileViewModel _fileViewModel;
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
+        public ICommand TreeViewLoadOnDemandCommand { get; set; }
 
-        public MainViewModel(IDialogService dialogService, IUnitOfWork unitOfWork)
+        public MainViewModel(
+            IDialogService dialogService,
+            IUnitOfWork unitOfWork,
+            IFileConverterService fileConverterService,
+            IFileReaderService fileReaderService)
         {
             _dialogService = dialogService;
             _unitOfWork = unitOfWork;
+            _fileConverterService = fileConverterService;
+            _fileReaderService = fileReaderService;
 
-            InitAsync();
+            // Rework Load with navigation to? 
+            _ = InitAsync();
+
             AddCommand = new RelayCommand(Add);
             DeleteAllCommand = new RelayCommand(DeleteAll);
             ConvertActionCommand = new RelayCommand<ConverterOutputType>(ConvertAction);
@@ -105,8 +116,6 @@ namespace Shapr3D.Converter.ViewModels
                 await _unitOfWork.ModelEntity.Add(model.ToModelEntity());
                 await _unitOfWork.Save();
                 
-                //await _persistedStore.AddOrUpdateAsync(model.ToModelEntity());
-
                 Files.Add(model);
             }
         }
@@ -129,10 +138,10 @@ namespace Shapr3D.Converter.ViewModels
             SelectedFile = null;
         }
 
-        //when click
         private async void ConvertAction(ConverterOutputType type)
         {
             var state = SelectedFile.ConversionInfos[type];
+
             switch (state.State)
             {
                 case ConversionState.NotStarted:
@@ -149,173 +158,101 @@ namespace Shapr3D.Converter.ViewModels
 
         private async Task ConvertFile(FileViewModel model, ConverterOutputType type)
         {
-            var state = _fileViewModel.ConversionInfos[type];
-            Progress<int> progress = new Progress<int>((p) =>
-            {
-                state.Progress = p;
-            });
+            var conversionStatus = _fileViewModel.ConversionInfos[type];
+            conversionStatus.CancellationTokenSource = new CancellationTokenSource();
 
-            state.State = ConversionState.Converting;
+            var progress = new Progress<int>((percentageComplete) =>
+            {
+                conversionStatus.Progress = percentageComplete;
+            });
 
             try
             {
-                await Task.Run(() => Convert(model, progress, type));
+                conversionStatus.State = ConversionState.Converting;
+                var input = await _fileReaderService.ReadFileIntoByteArrayAsync(model.OriginalPath);
+                var result = await _fileConverterService.ApplyConverterAndReportAsync(progress, conversionStatus.CancellationTokenSource, ConvertChunk, input);
+                conversionStatus.ConvertedResult = result;
 
-                if (state.IsCancellationRequested)
-                {
-                    // Do I need this? or just throw a task cancelled exception?
-                    state.State = ConversionState.NotStarted;
-                    state.Progress = 0;
-                    state.IsCancellationRequested = false;
-                }
-                else
-                {
-                    state.State = ConversionState.Converted;
-                }
-
+                conversionStatus.State = ConversionState.Converted;
                 await _unitOfWork.ModelEntity.Update(model.ToModelEntity());
                 await _unitOfWork.Save();
             }
             catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
             {
-                // TODO
-                // Do I need to add a dialog with close and try again due error of access
                 await _dialogService.ShowExceptionModalDialog(ex, $"{model.OriginalPath} (Read README.md for instructions.)");
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
-                // Do I need this? or just throw a task cancelled exception?
-                state.Progress = 0;
-                //state.IsCancellationRequested = false;
-                state.State = ConversionState.NotStarted;
+                // Should I dispose CancellationTokenSource here or insude ApplyConverterAndReportAsync?
+                conversionStatus.Progress = 0;
+                conversionStatus.State = ConversionState.NotStarted;
+                await _dialogService.ShowOkModalDialog("Confirmation", "The conversion was cancelled.");
             }
-            catch (ConversionFailedException conversionFailException) 
+            catch (ConversionFailedException ex)
             {
-                await _dialogService.ShowExceptionModalDialog(conversionFailException, "The file could not be converted");
+                await _dialogService.ShowExceptionModalDialog(ex, "The file could not be converted.");
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowExceptionModalDialog(ex, ex.StackTrace);
             }
         }
 
         private async void Save(FileViewModel model, ConverterOutputType outputType)
         {
-            var savePicker = new FileSavePicker();
-            savePicker.FileTypeChoices.Add
-                                  (string.Format("{0} file", outputType.ToString().ToLower()), new List<string>() { string.Format(".{0}", outputType.ToString().ToLower()) });
-
-            savePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
-            StorageFile savedFile = await savePicker.PickSaveFileAsync();
-            
-            // TODO https://docs.microsoft.com/en-us/windows/uwp/files/
-
-            // References from https://docs.microsoft.com/en-us/windows/uwp/files/best-practices-for-writing-to-files
-            Int32 retryAttempts = 5;
-
-            if (savedFile != null)
+            try
             {
-                // Application now has read/write access to the picked file.
-                while (retryAttempts > 0)
+                var savePicker = new FileSavePicker();
+                savePicker.FileTypeChoices.Add
+                                      (string.Format("{0} file", outputType.ToString().ToLower()), new List<string>() { string.Format(".{0}", outputType.ToString().ToLower()) });
+
+                savePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
+                var savedFile = await savePicker.PickSaveFileAsync();
+
+                // References from https://docs.microsoft.com/en-us/windows/uwp/files/best-practices-for-writing-to-files
+                int retryAttempts = 5;
+                if (savedFile != null)
                 {
-                    try
+                    while (retryAttempts > 0)
                     {
                         retryAttempts--;
                         var convertedFile = model.ConversionInfos[outputType];
 
-                        await FileIO.WriteBytesAsync(savedFile, convertedFile.ConvertedFile.ToArray());
+                        await FileIO.WriteBytesAsync(savedFile, convertedFile.ConvertedResult);
+                        await _dialogService.ShowOkModalDialog("Success", $"The file has been saved to {savedFile.Path}");
                         break;
                     }
-                    catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
-                    {
-                        // This might be recovered by retrying, otherwise let the exception be raised.
-                        // The app can decide to wait before retrying.
-                    }
+                }
+                else
+                {
+                    // The operation was cancelled in the picker dialog.
                 }
             }
-            else
+            catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
             {
-                // The operation was cancelled in the picker dialog.
+                await _dialogService.ShowExceptionModalDialog(ex, $"{model.OriginalPath} (Read README.md for instructions.)");
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowExceptionModalDialog(ex, "Unexpected error occured during file save.");
             }
         }
 
         private async void DeleteAll()
         {
-            foreach (var model in Files)
+            var result = await _dialogService.ShowBlockingQuestionModalDialog("Confirmation", "Are you sure you want to remove all files?");
+            if (result ?? false)
             {
-                model.CancelConversions();
-            }
-
-            await _unitOfWork.ModelEntity.DeleteAllAsync();
-            await _unitOfWork.Save();
-
-            SelectedFile = null;
-            Files.Clear();
-        }
-
-        // TODO
-        private async Task Convert(FileViewModel model, IProgress<int> progress, ConverterOutputType outputType)
-        {
-            var storageFile = await StorageFile.GetFileFromPathAsync(model.OriginalPath);
-            Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Add(storageFile);
-            IBuffer buffer = await FileIO.ReadBufferAsync(storageFile);
-
-            byte[] bytes = buffer.ToArray();
-
-            //what if pressing cancel when creating chunks?
-            //var chunks = bytes.Select((s, i) => new { s, i })
-            //                      .GroupBy(x => x.i % 100)
-            //                      .Select(g => g.Select(x => x.s).ToList())
-            //                      .ToList();
-
-            int i = 0;
-            var chunks = from chunk in bytes
-                         group chunk by i++ % 100 into part
-                         select part.AsEnumerable();
-
-            var currentFile = model.ConversionInfos[outputType];
-
-            int taskResolved = 0;
-            currentFile.ConvertedFile = new List<byte>();
-
-            Debug.WriteLine(@"TEST3:");
-
-            // Note: How is it possible to run paralell and the result is in ordered too.
-            foreach (var item in chunks)
-            {
-                try
+                foreach (var model in Files)
                 {
-                    Debug.WriteLine(@"TEST:" + item.Count());
-
-                    if (!currentFile.IsCancellationRequested)
-                    {
-                        var convertedChunck = await Task.Run(() => ConvertChunk(item.ToArray()));
-                        currentFile.ConvertedFile.AddRange(convertedChunck);
-
-                        if (progress != null)
-                        {
-                            taskResolved++;
-                            var percentage = (double)taskResolved / chunks.Count();
-                            percentage *= 100;
-                            var pertentageInt = (int)Math.Round(percentage);
-                            await Task.Run(() => progress.Report(pertentageInt));
-
-                            Debug.WriteLine(@"TEST:" + pertentageInt);
-                        }
-                        else
-                        {
-                            await Task.Run(() => progress.Report(0));
-                            return;
-                        }
-                    }
+                    model.CancelConversions();
                 }
-                catch (ConversionFailedException ex)
-                {
-                    // What to do with the ex?
-                    await Task.Run(() => progress.Report(0));
-                    currentFile.State = ConversionState.NotStarted;
-                    return;
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+
+                await _unitOfWork.ModelEntity.DeleteAllAsync();
+                await _unitOfWork.Save();
+
+                SelectedFile = null;
+                Files.Clear();
             }
         }
 
@@ -331,13 +268,6 @@ namespace Shapr3D.Converter.ViewModels
             {
                 array[i] = bytes[num - i - 1];
             }
-
-            //int num4 = new Random().Next(0, 1000);
-            //if (num4 == 0)
-            //{
-            //    throw new ConversionFailedException($"Conversion failed. Error code {num4}");
-            //}
-
             return array;
         }
     }

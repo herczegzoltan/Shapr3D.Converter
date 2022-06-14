@@ -1,5 +1,6 @@
 ﻿using Shapr3D.Converter.Enums;
 using System.ComponentModel;
+using System.Threading;
 
 namespace Shapr3D.Converter.Models
 {
@@ -43,8 +44,8 @@ namespace Shapr3D.Converter.Models
             }
         }
 
+        public CancellationTokenSource CancellationTokenSource { get; set; }
         public byte[] ConvertedResult { get; set; }
-        public bool IsCancellationRequested { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
     }
 }

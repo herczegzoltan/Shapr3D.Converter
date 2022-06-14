@@ -73,14 +73,11 @@ namespace Shapr3D.Converter.ViewModels
         /* ============================================
          * Public methods
          * ============================================ */
-        // this is called when directly clicked on the file
-        // TODO
         public void CancelConversion(ConverterOutputType type)
         {
-            // only if converting in progress
             if (ConversionInfos[type].State == ConversionState.Converting)
             {
-                ConversionInfos[type].IsCancellationRequested = true;
+                ConversionInfos[type].CancellationTokenSource.Cancel();
             }
         }
 
