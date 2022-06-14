@@ -189,10 +189,14 @@ namespace Shapr3D.Converter.ViewModels
             {
                 conversionInfoOfSelectedFile.State = ConversionState.Converting;
                 var input = await _fileReaderService.ReadFileIntoByteArrayAsync(_selectedFile.OriginalPath);
-                var result = await _fileConverterService.ApplyConverterAndReportAsync(progress, conversionInfoOfSelectedFile.CancellationTokenSource, ConvertChunk, input);
+                var result = await _fileConverterService.ApplyConverterAndReportAsync(
+                    progress,
+                    conversionInfoOfSelectedFile.CancellationTokenSource,
+                    ConvertChunk, input);
+                
                 conversionInfoOfSelectedFile.ConvertedResult = result;
-
                 conversionInfoOfSelectedFile.State = ConversionState.Converted;
+                
                 await _unitOfWork.ModelEntity.Update(_selectedFile.ToModelEntity());
                 await _unitOfWork.Save();
             }

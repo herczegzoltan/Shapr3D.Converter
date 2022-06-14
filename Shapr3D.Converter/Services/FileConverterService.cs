@@ -20,7 +20,6 @@ namespace Shapr3D.Converter.Services
         {
             var chunksBagInOrder = new ConcurrentDictionary<int, byte[]>();
 
-
             try
             {
                 _ = progress ?? throw new ArgumentNullException(nameof(progress));
@@ -28,18 +27,15 @@ namespace Shapr3D.Converter.Services
                 _ = appliedConverter ?? throw new ArgumentNullException(nameof(appliedConverter));
                 _ = source ?? throw new ArgumentNullException(nameof(source));
 
-                var chunks = SplitByteArrayIntoNChunksWithIndex(source, (int)Math.Ceiling((double)source.Length / NumberOfChunks));
-
+                var chunks = await Task.Run(() => SplitByteArrayIntoNChunksWithIndex(source, (int)Math.Ceiling((double)source.Length / NumberOfChunks)));
                 var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism, CancellationToken = cancellationTokenSource.Token };
-
                 var taskCompleted = 0;
+                
                 await Task.Run(() =>
                 {
-                    var thread = Thread.CurrentThread;
-
-                    Parallel.ForEach(chunks, parallelOptions, (chunk) =>
+                    Parallel.ForEach(chunks, parallelOptions, (chunk, state) =>
                     {
-                        parallelOptions.CancellationToken.ThrowIfCancellationRequested();
+                        //parallelOptions.CancellationToken.ThrowIfCancellationRequested();  Do I need this?
 
                         var result = appliedConverter(chunk.Item2);
                         taskCompleted++;
@@ -53,7 +49,6 @@ namespace Shapr3D.Converter.Services
             {
                 throw ex;
             }
-
             catch (Exception)
             {
                 throw;
