@@ -40,5 +40,21 @@ namespace Sharp3D.Converter.Ui.Dialogs
                 throw ex;
             }
         }
+
+        public async Task ShowOkModalDialog(string tilte, string description)
+        {
+            try
+            {
+                Title = tilte;
+                Content = description;
+                CloseButtonText = "Ok";
+
+                await ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
