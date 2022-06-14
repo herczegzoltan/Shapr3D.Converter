@@ -52,12 +52,15 @@
     <Compile Include="Controls\ConverterStateButton.xaml.cs">
       <DependentUpon>ConverterStateButton.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Extensions\ByteArraySplitToChunksExtensions.cs" />
     <Compile Include="Extensions\ConverterOutputTypeFlagsExtensions.cs" />
     <Compile Include="Infrastructure\RelayCommand.cs" />
     <Compile Include="Enums\ConverterOutputType.cs" />
     <Compile Include="Enums\ConversionState.cs" />
     <Compile Include="Models\ConversionInfo.cs" />
+    <Compile Include="Services\FileConverterService.cs" />
+    <Compile Include="Services\FileReaderService.cs" />
+    <Compile Include="Services\IFileConverterService.cs" />
+    <Compile Include="Services\IFileReaderService.cs" />
     <Compile Include="ViewModels\FileViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />

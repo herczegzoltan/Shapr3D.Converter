@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Shapr3D.Converter.Services;
 using Shapr3D.Converter.View;
 using Sharp3D.Converter.DataAccess.Data;
 using Sharp3D.Converter.DataAccess.Repository;
@@ -65,9 +66,10 @@ namespace Shapr3D.Converter
             serviceCollection.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite(configuration.GetSection("SQLite").Value));
 
-
             serviceCollection.AddTransient<IDialogService, DialogService>();
             serviceCollection.AddScoped<IUnitOfWork, UnitOfWork>();
+            serviceCollection.AddScoped<IFileConverterService, FileConverterService>();
+            serviceCollection.AddScoped<IFileReaderService, FileReaderService>();
             // Register view models here? like fileViewModel into mainviewmodel
 
             return serviceCollection.BuildServiceProvider();
