@@ -1,5 +1,4 @@
 ﻿using Shapr3D.Converter.Enums;
-using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace Shapr3D.Converter.Models
@@ -44,7 +43,7 @@ namespace Shapr3D.Converter.Models
             }
         }
 
-        public List<byte> ConvertedFile { get; set; }
+        public byte[] ConvertedResult { get; set; }
         public bool IsCancellationRequested { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
     }
