@@ -30,18 +30,26 @@ namespace Shapr3D.Converter.Services
                 var chunks = await Task.Run(() => SplitByteArrayIntoNChunksWithIndex(source, (int)Math.Ceiling((double)source.Length / NumberOfChunks)));
                 var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism, CancellationToken = cancellationTokenSource.Token };
                 var taskCompleted = 0;
-                
+                var lockTarget = new object();
+
                 await Task.Run(() =>
                 {
                     Parallel.ForEach(chunks, parallelOptions, (chunk, state) =>
                     {
-                        //parallelOptions.CancellationToken.ThrowIfCancellationRequested();  Do I need this?
-
-                        var result = appliedConverter(chunk.Item2);
-                        taskCompleted++;
-                        chunksBagInOrder[chunk.Item1] = result;
-                        var percentageComplete = (taskCompleted * 100) / NumberOfChunks;
-                        progress.Report(percentageComplete);
+                        try
+                        {
+                            var result = appliedConverter(chunk.Item2);
+                            chunksBagInOrder[chunk.Item1] = result;
+                        }
+                        finally
+                        {
+                            lock (lockTarget)
+                            {
+                                taskCompleted++;
+                                var percentageComplete = (taskCompleted * 100) / NumberOfChunks;
+                                progress.Report(percentageComplete);
+                            }
+                        }
                     });
                 });
             }
