@@ -22,8 +22,6 @@ namespace Shapr3D.Converter.Services
                     throw new FileNotFoundException(path);
                 }
 
-                // Do I need to add the accesscache? after modify package appmanifest
-                //Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Add(storageFile);
                 var buffer = await FileIO.ReadBufferAsync(storageFile);
 
                 return buffer.ToArray();
