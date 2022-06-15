@@ -1,9 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Storage;
-using Windows.Storage.Streams;
 
 namespace Shapr3D.Converter.Services
 {
@@ -16,16 +16,21 @@ namespace Shapr3D.Converter.Services
             try
             {
                 var storageFile = await StorageFile.GetFileFromPathAsync(path);
+
+                if (!storageFile.IsAvailable)
+                {
+                    throw new FileNotFoundException(path);
+                }
+
                 // Do I need to add the accesscache? after modify package appmanifest
                 //Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Add(storageFile);
-                IBuffer buffer = await FileIO.ReadBufferAsync(storageFile);
+                var buffer = await FileIO.ReadBufferAsync(storageFile);
 
                 return buffer.ToArray();
-
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw ex;
             }
         }
     }
