@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Shapr3D.Converter.Enums;
+using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Services;
 using Shapr3D.Converter.ViewModels;
 using Sharp3D.Converter.DataAccess.Repository.IRepository;
@@ -72,7 +73,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             // Then
             Assert.AreEqual(expectedNumberOfFiles, sut.Files.Count());
         }
-        
+
         [TestMethod]
         public void WhenInstansiatedAndInitAsyncIsCalledAndExceptionIsThrown_ThenDialogIsShown()
         {
@@ -100,7 +101,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             // Given
             var sut = InstantiateViewModel();
             sut.SelectedFile = new FileViewModel(It.IsAny<Guid>(), "RandomForOriginalPath", It.IsAny<ConverterOutputTypeFlags>(), It.IsAny<ulong>());
-            
+
             // When
             sut.CloseDetailsCommand.Execute(null);
 
@@ -120,7 +121,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             bool? isDeleteSelected = true;
             _dialogServiceMock.Setup(_ => _.ShowBlockingQuestionModalDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.FromResult(isDeleteSelected));
-            
+
             // When
             sut.DeleteAllCommand.Execute(null);
 
@@ -216,7 +217,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             var sut = InstantiateViewModel();
             var fileName = "RandomFileName.shapr";
             var filePath = $"RandomForOriginalPath\\{fileName}";
-            var file = new FileViewModel(It.IsAny<Guid>(), filePath, (ConverterOutputTypeFlags)converterOutputType, It.IsAny<ulong>());
+            var file = new FileViewModel(It.IsAny<Guid>(), filePath, converterOutputType.ToFlag(), It.IsAny<ulong>());
             sut.SelectedFile = file;
             sut.SelectedFile.StlConversionInfo.State = ConversionState.NotStarted;
             sut.SelectedFile.ObjConversionInfo.State = ConversionState.NotStarted;
@@ -226,7 +227,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             var readFile = GenerateRandomFile();
             var converterResult = GenerateRandomFile();
             _fileReaderServiceMock.Setup(_ => _.ReadFileIntoByteArrayAsync(It.IsAny<string>())).Returns(Task.FromResult(readFile));
-            _fileConverterServiceMock.Setup(_ => _.ApplyConverterAndReportAsync(It.IsAny<IProgress<int>>(), 
+            _fileConverterServiceMock.Setup(_ => _.ApplyConverterAndReportAsync(It.IsAny<IProgress<int>>(),
                 It.IsAny<CancellationTokenSource>(),
                 It.IsAny<Func<byte[], byte[]>>(),
                 It.IsAny<byte[]>()))
@@ -251,7 +252,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
                 case ConverterOutputType.Step:
                     Assert.AreEqual(ConversionState.Converted, sut.SelectedFile.StepConversionInfo.State);
                     Assert.AreEqual(converterResult, sut.SelectedFile.StepConversionInfo.ConvertedResult);
-                    Assert.AreEqual(100, sut.SelectedFile.StepConversionInfo.Progress); 
+                    Assert.AreEqual(100, sut.SelectedFile.StepConversionInfo.Progress);
                     break;
                 default:
                     break;
