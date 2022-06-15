@@ -37,7 +37,7 @@ namespace Shapr3D.Converter.ViewModels
     {
         // Infrastructure fields
         private readonly IDialogService _dialogService;
-        private IUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IFileConverterService _fileConverterService;
         private readonly IFileReaderService _fileReaderService;
         private readonly ResourceLoader _resourceLoader;
