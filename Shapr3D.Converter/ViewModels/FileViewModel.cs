@@ -1,5 +1,5 @@
 ﻿using Shapr3D.Converter.Enums;
-using Shapr3D.Converter.Helpers;
+using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Models;
 using Sharp3D.Converter.Models;
 using System;
@@ -78,7 +78,15 @@ namespace Shapr3D.Converter.ViewModels
             if (ConversionInfos[type].State == ConversionState.Converting)
             {
                 ConversionInfos[type].CancellationTokenSource.Cancel();
+                ConversionInfos[type].IsCancellingAvailable = false;
             }
+        }
+
+        public void ResetProperties(ConverterOutputType type)
+        {
+            ConversionInfos[type].Progress = 0;
+            ConversionInfos[type].IsCancellingAvailable = true;
+            ConversionInfos[type].State = ConversionState.NotStarted;
         }
 
         public void CancelConversions()

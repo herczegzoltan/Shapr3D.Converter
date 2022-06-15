@@ -197,7 +197,7 @@ namespace Shapr3D.Converter.ViewModels
                 var result = await _fileConverterService.ApplyConverterAndReportAsync(
                     progress,
                     conversionInfoOfSelectedFile.CancellationTokenSource,
-                    ModelConverter.ConvertChunk,
+                    DummyConvertChunk,
                     input);
                 
                 conversionInfoOfSelectedFile.ConvertedResult = result;
@@ -208,23 +208,44 @@ namespace Shapr3D.Converter.ViewModels
             }
             catch (Exception ex) when ((ex.HResult == ErrorAccessDenied) || (ex.HResult == ErrorSharingViolation))
             {
+                _selectedFile.ResetProperties(type);
                 await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("ReadMeMessage"), _selectedFile.OriginalPath));
             }
             catch (OperationCanceledException)
             {
-                conversionInfoOfSelectedFile.Progress = 0;
-                conversionInfoOfSelectedFile.State = ConversionState.NotStarted;
-                
+                _selectedFile.ResetProperties(type);
                 await _dialogService.ShowOkModalDialog(_resourceLoader.GetString("ConfirmationMessage"), _resourceLoader.GetString("CancelledMessage"));
             }
             catch (ConversionFailedException ex)
             {
+                _selectedFile.ResetProperties(type);
                 await _dialogService.ShowExceptionModalDialog(ex, _resourceLoader.GetString("CouldNotConvertMessage"));
             }
             catch (Exception ex)
             {
+                _selectedFile.ResetProperties(type);
                 await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "converting the file."));
             }
+        }
+
+        public static byte[] DummyConvertChunk(byte[] bytes)
+        {
+            int num = bytes.Length;
+            int num2 = 300000;
+            int num3 = (int)Math.Pow(2.0, num / 1000000) * 1000;
+            byte[] array = new byte[num];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = bytes[num - i - 1];
+            }
+
+            int num4 = new Random().Next(0, 1000);
+            if (num4 == 0)
+            {
+                throw new ConversionFailedException($"Conversion failed. Error code {num4}");
+            }
+
+            return array;
         }
 
         private async void Save(FileViewModel model, ConverterOutputType outputType)

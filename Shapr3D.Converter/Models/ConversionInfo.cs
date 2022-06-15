@@ -8,9 +8,11 @@ namespace Shapr3D.Converter.Models
     {
         private ConversionState _state;
         private int _progress;
+        private bool _isCancellingAvailable;
 
         public ConversionInfo(bool isConverted)
         {
+            _isCancellingAvailable = true;
             State = isConverted ? ConversionState.Converted : ConversionState.NotStarted;
             if (isConverted)
             {
@@ -40,6 +42,19 @@ namespace Shapr3D.Converter.Models
                 {
                     _progress = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Progress)));
+                }
+            }
+        }
+
+        public bool IsCancellingAvailable
+        {
+            get => _isCancellingAvailable;
+            set
+            {
+                if (_isCancellingAvailable != value)
+                {
+                    _isCancellingAvailable = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCancellingAvailable)));
                 }
             }
         }

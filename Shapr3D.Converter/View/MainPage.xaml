@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:conv="using:Shapr3D.Converter.Ui.ValueConverters"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vms="using:Shapr3D.Converter.Enums"
+    xmlns:vms="using:Shapr3D.Converter.Enums" 
     mc:Ignorable="d"
     Background="White">
 
@@ -62,35 +62,27 @@
                                 CommandParameter="{x:Bind vms:ConverterOutputType.Obj}"
                                 ConversionState="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.State, Mode=OneWay}"
                                 Progress="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.Progress, Mode=OneWay}"
-                                Text="Shapr to .Obj" />
+                                Text="Shapr to .Obj"
+                                IsEnabled="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
                             <controls:ConverterStateButton
                                 Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
                                 CommandParameter="{x:Bind vms:ConverterOutputType.Stl}"
                                 ConversionState="{x:Bind ViewModel.SelectedFile.StlConversionInfo.State, Mode=OneWay}"
                                 Progress="{x:Bind ViewModel.SelectedFile.StlConversionInfo.Progress, Mode=OneWay}"
-                                Text="Shapr to .Stl" />
+                                Text="Shapr to .Stl"
+                                IsEnabled="{x:Bind ViewModel.SelectedFile.StlConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
                             <controls:ConverterStateButton
                                 Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
                                 CommandParameter="{x:Bind vms:ConverterOutputType.Step}"
                                 ConversionState="{x:Bind ViewModel.SelectedFile.StepConversionInfo.State, Mode=OneWay}"
                                 Progress="{x:Bind ViewModel.SelectedFile.StepConversionInfo.Progress, Mode=OneWay}"
-                                Text="Shapr to .Step" />
+                                Text="Shapr to .Step" 
+                                IsEnabled="{x:Bind ViewModel.SelectedFile.StepConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </SplitView.Pane>
-
-        <!--  TODO  -->
-        <!--<ListView
-            Margin="12"
-            DisplayMemberPath="Name"
-            IsItemClickEnabled="True"
-            ItemsSource="{x:Bind ViewModel.Files}"
-            SelectedItem="{x:Bind ViewModel.SelectedFile, Mode=TwoWay}"
-            SelectionMode="Single" >
-
-        </ListView>-->
 
         <ListView 
             ItemsSource="{x:Bind ViewModel.Files}"
@@ -112,11 +104,21 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Margin="5" Orientation="Vertical" Width="125" Height="180" Background="#eeefee" Spacing="20" Padding="5">
-                        <Image Source="/Assets/shapr3d.png"/>
-                        <TextBlock Text="{Binding Path=Name}" Foreground="Black"/>
-                        <ProgressBar IsIndeterminate="True" HorizontalAlignment="Center" Width="100"
-                                     Visibility="{Binding Path=IsConverting, Mode=OneWay, Converter={StaticResource booleanToVisibilityConverter}}"/>
-                        <StackPanel Orientation="Horizontal" Spacing="5" Padding="5" HorizontalAlignment="Center">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Foreground="Red" TextWrapping="WrapWholeWords" Text="Cancelling of .Obj in progress" FontSize="10" HorizontalAlignment="Center" Visibility="{Binding Path=ObjConversionInfo.IsCancellingAvailable, Mode=OneWay, Converter={StaticResource booleanToVisibilityConverter}, ConverterParameter='Reverse'}"/>
+                            <TextBlock Grid.Row="0" Foreground="Red" TextWrapping="WrapWholeWords" Text="Cancelling of .Stl in progress" FontSize="10" HorizontalAlignment="Center" Visibility="{Binding Path=StlConversionInfo.IsCancellingAvailable, Mode=OneWay, Converter={StaticResource booleanToVisibilityConverter}, ConverterParameter='Reverse'}"/>
+                            <TextBlock Grid.Row="0" Foreground="Red" TextWrapping="WrapWholeWords" Text="Cancelling of .Step in progress" FontSize="10" HorizontalAlignment="Center" Visibility="{Binding Path=StepConversionInfo.IsCancellingAvailable, Mode=OneWay, Converter={StaticResource booleanToVisibilityConverter}, ConverterParameter='Reverse'}"/>
+                            <Image Grid.Row="1" Source="/Assets/shapr3d.png"/>
+                            <TextBlock Grid.Row="2" Text="{Binding Path=Name}" Foreground="Black" Padding="5"/>
+                            <ProgressBar Grid.Row="3" IsIndeterminate="True" HorizontalAlignment="Center" Width="100" Visibility="{Binding Path=IsConverting, Mode=OneWay, Converter={StaticResource booleanToVisibilityConverter}}"/>
+                        </Grid>
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="5" Padding="5" HorizontalAlignment="Center">
                             <Grid Visibility="{Binding ObjConversionInfo.State, Mode=OneWay, Converter={StaticResource enumVisibilityConverter}, ConverterParameter='Converted'}">
                                 <TextBlock Name="TextblockObj" Text="OBJ" TextAlignment="Center" Foreground="Green" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="2"/>
                                 <Rectangle Width="{Binding ElementName=TextblockObj, Path=ActualWidth}" Height="{Binding ElementName=TextblockObj, Path=ActualHeight}" StrokeDashArray="0.0 6.0 0.0" Stroke="Green" StrokeThickness="1"  />
