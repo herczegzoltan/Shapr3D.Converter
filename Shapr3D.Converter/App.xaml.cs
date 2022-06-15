@@ -10,6 +10,8 @@ using Sharp3D.Converter.Ui.Dialogs;
 using System;
 using System.IO;
 using Windows.ApplicationModel.Activation;
+using Windows.ApplicationModel.Resources;
+using Windows.Storage.Pickers;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
@@ -70,7 +72,8 @@ namespace Shapr3D.Converter
             serviceCollection.AddSingleton<IUnitOfWork, UnitOfWork>();
             serviceCollection.AddSingleton<IFileConverterService, FileConverterService>();
             serviceCollection.AddSingleton<IFileReaderService, FileReaderService>();
-            // Register view models here? like fileViewModel into mainviewmodel
+            serviceCollection.AddSingleton<ResourceLoader>();
+            serviceCollection.AddSingleton<FileOpenPicker>();
 
             return serviceCollection.BuildServiceProvider();
         }
