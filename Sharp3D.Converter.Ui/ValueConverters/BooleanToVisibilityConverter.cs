@@ -12,6 +12,5 @@ namespace Shapr3D.Converter.Ui.ValueConverters
 
         public object ConvertBack(object value, Type targetType, object parameter, string language) =>
             (Visibility)value == Visibility.Visible ^ (parameter as string ?? string.Empty).Equals("Reverse");
-
     }
 }
