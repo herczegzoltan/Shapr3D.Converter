@@ -47,6 +47,7 @@ namespace Shapr3D.Converter.ViewModels
         // Getter/setter backup fields
         private FileViewModel _selectedFile;
         private const string FileTypeFilter = ".shapr";
+        private const string AllFileTypeFilter = "*";
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         private const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
@@ -69,6 +70,7 @@ namespace Shapr3D.Converter.ViewModels
             _fileOpenPicker.ViewMode = PickerViewMode.Thumbnail;
             _fileOpenPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
             _fileOpenPicker.FileTypeFilter.Add(FileTypeFilter);
+            _fileOpenPicker.FileTypeFilter.Add(AllFileTypeFilter);
 
             // Rework Load with navigation to? 
             _ = InitAsync();
@@ -128,7 +130,6 @@ namespace Shapr3D.Converter.ViewModels
                 }
                 else
                 {
-                    throw new FileNotFoundException();
                 }
             }
             catch (Exception ex)
@@ -252,6 +253,7 @@ namespace Shapr3D.Converter.ViewModels
         {
             try
             {
+                _fileSavePicker.FileTypeChoices.Clear();
                 _fileSavePicker.FileTypeChoices.Add(string.Format("{0} file",
                     outputType.ToString().ToLower()),
                     new List<string>() { string.Format(".{0}",
@@ -294,21 +296,24 @@ namespace Shapr3D.Converter.ViewModels
         {
             try
             {
-                var result = await _dialogService.ShowBlockingQuestionModalDialog(
-                _resourceLoader.GetString("ConfirmationMessage"),
-                _resourceLoader.GetString("AreSureRemoveMessage"));
-                if (result ?? false)
+                if (Files.Count > 0)
                 {
-                    foreach (var model in Files)
+                    var result = await _dialogService.ShowBlockingQuestionModalDialog(
+                    _resourceLoader.GetString("ConfirmationMessage"),
+                    _resourceLoader.GetString("AreSureRemoveMessage"));
+                    if (result ?? false)
                     {
-                        model.CancelConversions();
+                        foreach (var model in Files)
+                        {
+                            model.CancelConversions();
+                        }
+
+                        await _unitOfWork.ModelEntity.DeleteAllAsync();
+                        await _unitOfWork.Save();
+
+                        SelectedFile = null;
+                        Files.Clear();
                     }
-
-                    await _unitOfWork.ModelEntity.DeleteAllAsync();
-                    await _unitOfWork.Save();
-
-                    SelectedFile = null;
-                    Files.Clear();
                 }
             }
             catch (Exception ex)
