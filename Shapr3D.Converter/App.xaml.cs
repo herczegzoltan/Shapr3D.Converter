@@ -74,6 +74,7 @@ namespace Shapr3D.Converter
             serviceCollection.AddSingleton<IFileReaderService, FileReaderService>();
             serviceCollection.AddSingleton<ResourceLoader>();
             serviceCollection.AddSingleton<FileOpenPicker>();
+            serviceCollection.AddSingleton<FileSavePicker>();
 
             return serviceCollection.BuildServiceProvider();
         }

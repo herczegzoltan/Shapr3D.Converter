@@ -1,16 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Services;
 using Shapr3D.Converter.ViewModels;
-using Sharp3D.Converter.DataAccess.Repository;
 using Sharp3D.Converter.DataAccess.Repository.IRepository;
 using Sharp3D.Converter.Models;
 using Sharp3D.Converter.Ui.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Resources;
+using Windows.Storage.Pickers;
 
 namespace Shapr3D.Converter.UnitTests.ViewModels
 {
@@ -23,6 +25,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
         private Mock<IDialogService> _dialogServiceMock;
         private Mock<IFileConverterService> _fileConverterServiceMock;
         private Mock<IFileReaderService> _fileReaderServiceMock;
+        private FileSavePicker _fileSavePicker;
 
         [TestInitialize]
         public void Initialize()
@@ -33,8 +36,10 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             _dialogServiceMock = new Mock<IDialogService>();
             _fileConverterServiceMock = new Mock<IFileConverterService>();
             _fileReaderServiceMock = new Mock<IFileReaderService>();
-            
+            _fileSavePicker = new FileSavePicker();
+
             _unitOfWorkMock.Setup(_ => _.ModelEntity).Returns(_modelEntityRepositoryMock.Object);
+            _modelEntityRepositoryMock.Setup(_ => _.GetAllAsync()).Returns(Task.FromResult(new List<ModelEntity>()));
         }
 
         /* --------------------------------------------
@@ -90,6 +95,20 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
          * -------------------------------------------- */
 
         [TestMethod]
+        public void WhenCloseCommand_ThenSelectedFileIsCleared()
+        {
+            // Given
+            var sut = InstantiateViewModel();
+            sut.SelectedFile = new FileViewModel(It.IsAny<Guid>(), "RandomForOriginalPath", It.IsAny<ConverterOutputTypeFlags>(), It.IsAny<ulong>());
+            
+            // When
+            sut.CloseDetailsCommand.Execute(null);
+
+            // Then
+            Assert.IsNull(sut.SelectedFile);
+        }
+
+        [TestMethod]
         public void WhenDeleteAllCommandAndExceptionIsThrown_ThenDialogIsShown()
         {
             // Given
@@ -132,6 +151,84 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             Assert.AreEqual(expectedFileRemained, sut.Files.Count());
         }
 
+        [TestMethod]
+        [DataRow(ConversionState.NotStarted, ConverterOutputType.Obj)]
+        [DataRow(ConversionState.Converted, ConverterOutputType.Obj)]
+        [DataRow(ConversionState.Converting, ConverterOutputType.Obj)]
+        [DataRow(ConversionState.NotStarted, ConverterOutputType.Stl)]
+        [DataRow(ConversionState.Converted, ConverterOutputType.Stl)]
+        [DataRow(ConversionState.Converting, ConverterOutputType.Stl)]
+        [DataRow(ConversionState.NotStarted, ConverterOutputType.Step)]
+        [DataRow(ConversionState.Converted, ConverterOutputType.Step)]
+        [DataRow(ConversionState.Converting, ConverterOutputType.Step)]
+        public void WhenConvertActionIsCalledWithDifferentConversionStates_ThenCorrectActionIsCalled(ConversionState conversionState, ConverterOutputType converterOutputType)
+        {
+            // Given
+            var sut = InstantiateViewModel();
+            var fileName = "RandomFileName.shapr";
+            var filePath = $"RandomForOriginalPath\\{fileName}";
+            var file = new FileViewModel(It.IsAny<Guid>(), filePath, (ConverterOutputTypeFlags)converterOutputType, It.IsAny<ulong>());
+            sut.SelectedFile = file;
+
+            switch (converterOutputType)
+            {
+                case ConverterOutputType.Stl:
+                    sut.SelectedFile.StlConversionInfo.State = conversionState;
+                    break;
+                case ConverterOutputType.Obj:
+                    sut.SelectedFile.ObjConversionInfo.State = conversionState;
+                    break;
+                case ConverterOutputType.Step:
+                    sut.SelectedFile.StepConversionInfo.State = conversionState;
+                    break;
+                default:
+                    break;
+            }
+            sut.SelectedFile.StlConversionInfo.CancellationTokenSource = new CancellationTokenSource();
+            sut.SelectedFile.ObjConversionInfo.CancellationTokenSource = new CancellationTokenSource();
+            sut.SelectedFile.StepConversionInfo.CancellationTokenSource = new CancellationTokenSource();
+
+            // When
+            sut.ConvertActionCommand.Execute(converterOutputType);
+
+            // Then
+            switch (conversionState)
+            {
+                case ConversionState.NotStarted: // Converting
+                    _fileReaderServiceMock.Verify(_ => _.ReadFileIntoByteArrayAsync(filePath));
+                    break;
+                case ConversionState.Converting: // Cancel
+                    Assert.IsTrue(sut.SelectedFile.ConversionInfos[converterOutputType].CancellationTokenSource.IsCancellationRequested);
+                    break;
+                case ConversionState.Converted: // Save
+                    var expectedFileName = "RandomFileName";
+                    Assert.AreEqual(expectedFileName, _fileSavePicker.SuggestedFileName);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        [TestMethod]
+        public void WhenConvertCommand_ThenAllFilesAreCleared()
+        {
+            // Given
+            var specificException = new Exception();
+            _unitOfWorkMock.Setup(_ => _.ModelEntity.DeleteAllAsync())
+               .Throws(specificException);
+            var sut = InstantiateViewModel();
+
+            bool? isDeleteSelected = true;
+            _dialogServiceMock.Setup(_ => _.ShowBlockingQuestionModalDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.FromResult(isDeleteSelected));
+
+            // When
+            sut.ConvertActionCommand.Execute(It.IsAny<ConverterOutputType>());
+
+            // Then
+            _dialogServiceMock.Verify(d => d.ShowExceptionModalDialog(specificException, It.IsAny<string>()));
+        }
+
         /* ============================================
          * Private methods
          * ============================================ */
@@ -156,7 +253,10 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
                 _dialogServiceMock.Object,
                 _unitOfWorkMock.Object,
                 _fileConverterServiceMock.Object,
-                _fileReaderServiceMock.Object);
+                _fileReaderServiceMock.Object,
+                new ResourceLoader(),
+                new FileOpenPicker(),
+                _fileSavePicker);
         }
     }
 }

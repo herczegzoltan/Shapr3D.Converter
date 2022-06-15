@@ -42,6 +42,7 @@ namespace Shapr3D.Converter.ViewModels
         private readonly IFileReaderService _fileReaderService;
         private readonly ResourceLoader _resourceLoader;
         private readonly FileOpenPicker _fileOpenPicker;
+        private readonly FileSavePicker _fileSavePicker;
 
         // Getter/setter backup fields
         private FileViewModel _selectedFile;
@@ -49,14 +50,14 @@ namespace Shapr3D.Converter.ViewModels
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         private const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
-
         public MainViewModel(
             IDialogService dialogService,
             IUnitOfWork unitOfWork,
             IFileConverterService fileConverterService,
             IFileReaderService fileReaderService,
             ResourceLoader resourceLoader,
-            FileOpenPicker fileOpenPicker)
+            FileOpenPicker fileOpenPicker,
+            FileSavePicker fileSavePicker)
         {
             _dialogService = dialogService;
             _unitOfWork = unitOfWork;
@@ -64,6 +65,7 @@ namespace Shapr3D.Converter.ViewModels
             _fileReaderService = fileReaderService;
             _resourceLoader = resourceLoader;
             _fileOpenPicker = fileOpenPicker;
+            _fileSavePicker = fileSavePicker;
             _fileOpenPicker.ViewMode = PickerViewMode.Thumbnail;
             _fileOpenPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
             _fileOpenPicker.FileTypeFilter.Add(FileTypeFilter);
@@ -229,12 +231,13 @@ namespace Shapr3D.Converter.ViewModels
         {
             try
             {
-                var savePicker = new FileSavePicker();
-                savePicker.FileTypeChoices.Add
-                                      (string.Format("{0} file", outputType.ToString().ToLower()), new List<string>() { string.Format(".{0}", outputType.ToString().ToLower()) });
+                _fileSavePicker.FileTypeChoices.Add(string.Format("{0} file",
+                    outputType.ToString().ToLower()),
+                    new List<string>() { string.Format(".{0}",
+                    outputType.ToString().ToLower()) });
 
-                savePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
-                var savedFile = await savePicker.PickSaveFileAsync();
+                _fileSavePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
+                var savedFile = await _fileSavePicker.PickSaveFileAsync();
 
                 // References from https://docs.microsoft.com/en-us/windows/uwp/files/best-practices-for-writing-to-files
                 int retryAttempts = 5;
