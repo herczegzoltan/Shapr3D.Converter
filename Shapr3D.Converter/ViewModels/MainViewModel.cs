@@ -41,6 +41,7 @@ namespace Shapr3D.Converter.ViewModels
         private readonly IFileConverterService _fileConverterService;
         private readonly IFileReaderService _fileReaderService;
         private readonly ResourceLoader _resourceLoader;
+        private readonly FileOpenPicker _fileOpenPicker;
 
         // Getter/setter backup fields
         private FileViewModel _selectedFile;
@@ -53,13 +54,19 @@ namespace Shapr3D.Converter.ViewModels
             IDialogService dialogService,
             IUnitOfWork unitOfWork,
             IFileConverterService fileConverterService,
-            IFileReaderService fileReaderService)
+            IFileReaderService fileReaderService,
+            ResourceLoader resourceLoader,
+            FileOpenPicker fileOpenPicker)
         {
             _dialogService = dialogService;
             _unitOfWork = unitOfWork;
             _fileConverterService = fileConverterService;
             _fileReaderService = fileReaderService;
-            _resourceLoader = new ResourceLoader();
+            _resourceLoader = resourceLoader;
+            _fileOpenPicker = fileOpenPicker;
+            _fileOpenPicker.ViewMode = PickerViewMode.Thumbnail;
+            _fileOpenPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            _fileOpenPicker.FileTypeFilter.Add(FileTypeFilter);
 
             // Rework Load with navigation to? 
             _ = InitAsync();
@@ -105,14 +112,7 @@ namespace Shapr3D.Converter.ViewModels
         {
             try
             {
-                var picker = new FileOpenPicker
-                {
-                    ViewMode = PickerViewMode.Thumbnail,
-                    SuggestedStartLocation = PickerLocationId.PicturesLibrary,
-                };
-                picker.FileTypeFilter.Add(FileTypeFilter);
-
-                StorageFile file = await picker.PickSingleFileAsync();
+                StorageFile file = await _fileOpenPicker.PickSingleFileAsync();
                 if (file != null)
                 {
                     var id = Guid.NewGuid();
@@ -123,6 +123,10 @@ namespace Shapr3D.Converter.ViewModels
                     await _unitOfWork.Save();
 
                     Files.Add(model);
+                }
+                else
+                {
+                    throw new FileNotFoundException();
                 }
             }
             catch (Exception ex)
@@ -191,7 +195,8 @@ namespace Shapr3D.Converter.ViewModels
                 var result = await _fileConverterService.ApplyConverterAndReportAsync(
                     progress,
                     conversionInfoOfSelectedFile.CancellationTokenSource,
-                    ConvertChunk, input);
+                    ModelConverter.ConvertChunk,
+                    input);
                 
                 conversionInfoOfSelectedFile.ConvertedResult = result;
                 conversionInfoOfSelectedFile.State = ConversionState.Converted;
@@ -205,7 +210,6 @@ namespace Shapr3D.Converter.ViewModels
             }
             catch (OperationCanceledException)
             {
-                // Should I dispose CancellationTokenSource here or insude ApplyConverterAndReportAsync?
                 conversionInfoOfSelectedFile.Progress = 0;
                 conversionInfoOfSelectedFile.State = ConversionState.NotStarted;
                 
@@ -287,21 +291,6 @@ namespace Shapr3D.Converter.ViewModels
             {
                 await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "delete all files."));
             }
-        }
-
-        // Temp Convertchunk to remove delay
-        public static byte[] ConvertChunk(byte[] bytes)
-        {
-            int num = bytes.Length;
-            int num2 = 300000;
-            int num3 = (int)Math.Pow(2.0, num / 1000000) * 1000;
-            //Thread.Sleep((num3 > num2) ? num2 : num3);
-            byte[] array = new byte[num];
-            for (int i = 0; i < array.Length; i++)
-            {
-                array[i] = bytes[num - i - 1];
-            }
-            return array;
         }
     }
 }
