@@ -184,9 +184,6 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
                 default:
                     break;
             }
-            sut.SelectedFile.StlConversionInfo.CancellationTokenSource = new CancellationTokenSource();
-            sut.SelectedFile.ObjConversionInfo.CancellationTokenSource = new CancellationTokenSource();
-            sut.SelectedFile.StepConversionInfo.CancellationTokenSource = new CancellationTokenSource();
 
             // When
             sut.ConvertActionCommand.Execute(converterOutputType);
@@ -210,23 +207,67 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
         }
 
         [TestMethod]
-        public void WhenConvertCommand_ThenAllFilesAreCleared()
+        [DataRow(ConverterOutputType.Obj)]
+        [DataRow(ConverterOutputType.Stl)]
+        [DataRow(ConverterOutputType.Step)]
+        public void WhenConvertCommandWithValidInput_ThenFileIsConvertedAndSetPropertiesCorrectly(ConverterOutputType converterOutputType)
         {
             // Given
-            var specificException = new Exception();
-            _unitOfWorkMock.Setup(_ => _.ModelEntity.DeleteAllAsync())
-               .Throws(specificException);
             var sut = InstantiateViewModel();
+            SetupOneFileToBeLoadedForDatabase();
+            var fileName = "RandomFileName.shapr";
+            var filePath = $"RandomForOriginalPath\\{fileName}";
+            var file = new FileViewModel(It.IsAny<Guid>(), filePath, (ConverterOutputTypeFlags)converterOutputType, It.IsAny<ulong>());
+            sut.SelectedFile = file;
+            sut.SelectedFile.StlConversionInfo.State = ConversionState.NotStarted;
+            sut.SelectedFile.ObjConversionInfo.State = ConversionState.NotStarted;
+            sut.SelectedFile.StepConversionInfo.State = ConversionState.NotStarted;
 
-            bool? isDeleteSelected = true;
-            _dialogServiceMock.Setup(_ => _.ShowBlockingQuestionModalDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.FromResult(isDeleteSelected));
+            // Setup services
+            var readFile = GenerateRandomFile();
+            var converterResult = GenerateRandomFile();
+            _fileReaderServiceMock.Setup(_ => _.ReadFileIntoByteArrayAsync(It.IsAny<string>())).Returns(Task.FromResult(readFile));
+            _fileConverterServiceMock.Setup(_ => _.ApplyConverterAndReportAsync(It.IsAny<IProgress<int>>(), 
+                It.IsAny<CancellationTokenSource>(),
+                It.IsAny<Func<byte[], byte[]>>(),
+                It.IsAny<byte[]>()))
+                .Returns(Task.FromResult(converterResult));
 
             // When
-            sut.ConvertActionCommand.Execute(It.IsAny<ConverterOutputType>());
+            sut.ConvertActionCommand.Execute(converterOutputType);
 
             // Then
-            _dialogServiceMock.Verify(d => d.ShowExceptionModalDialog(specificException, It.IsAny<string>()));
+            switch (converterOutputType)
+            {
+                case ConverterOutputType.Stl:
+                    Assert.AreEqual(ConversionState.Converted, sut.SelectedFile.StlConversionInfo.State);
+                    Assert.AreEqual(converterResult, sut.SelectedFile.StlConversionInfo.ConvertedResult);
+                    Assert.AreEqual(100, sut.SelectedFile.StlConversionInfo.Progress);
+                    break;
+                case ConverterOutputType.Obj:
+                    Assert.AreEqual(ConversionState.Converted, sut.SelectedFile.ObjConversionInfo.State);
+                    Assert.AreEqual(converterResult, sut.SelectedFile.ObjConversionInfo.ConvertedResult);
+                    Assert.AreEqual(100, sut.SelectedFile.ObjConversionInfo.Progress);
+                    break;
+                case ConverterOutputType.Step:
+                    Assert.AreEqual(ConversionState.Converted, sut.SelectedFile.StepConversionInfo.State);
+                    Assert.AreEqual(converterResult, sut.SelectedFile.StepConversionInfo.ConvertedResult);
+                    Assert.AreEqual(100, sut.SelectedFile.StepConversionInfo.Progress); 
+                    break;
+                default:
+                    break;
+            }
+
+            _unitOfWorkMock.Verify(m => m.ModelEntity.Update(It.IsAny<ModelEntity>()), Times.Once);
+            _unitOfWorkMock.Verify(m => m.Save(), Times.Once);
+
+            byte[] GenerateRandomFile()
+            {
+                var rnd = new Random();
+                var testSource = new Byte[5000];
+                rnd.NextBytes(testSource);
+                return testSource;
+            }
         }
 
         /* ============================================
