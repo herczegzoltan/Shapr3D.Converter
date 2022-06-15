@@ -47,7 +47,7 @@ namespace Shapr3D.Converter.ViewModels
         private FileViewModel _selectedFile;
         private const string FileTypeFilter = ".shapr";
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
-        const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
+        private const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
 
         public MainViewModel(
