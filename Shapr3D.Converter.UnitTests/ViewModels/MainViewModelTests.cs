@@ -214,7 +214,6 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
         {
             // Given
             var sut = InstantiateViewModel();
-            SetupOneFileToBeLoadedForDatabase();
             var fileName = "RandomFileName.shapr";
             var filePath = $"RandomForOriginalPath\\{fileName}";
             var file = new FileViewModel(It.IsAny<Guid>(), filePath, (ConverterOutputTypeFlags)converterOutputType, It.IsAny<ulong>());
