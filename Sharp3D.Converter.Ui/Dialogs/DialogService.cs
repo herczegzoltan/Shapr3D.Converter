@@ -22,11 +22,11 @@ namespace Sharp3D.Converter.Ui.Dialogs
             }
         }
 
-        public async Task<bool?> ShowBlockingQuestionModalDialog(string tilte, string description, string primary = "Yes", string secondary = "No")
+        public async Task<bool?> ShowBlockingQuestionModalDialog(string title, string description, string primary = "Yes", string secondary = "No")
         {
             try
             {
-                Title = tilte;
+                Title = title;
                 Content = description;
                 PrimaryButtonText = primary;
                 CloseButtonText = secondary;

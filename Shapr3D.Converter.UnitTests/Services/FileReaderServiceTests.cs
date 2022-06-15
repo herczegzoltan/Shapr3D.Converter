@@ -27,7 +27,7 @@ namespace Shapr3D.Converter.UnitTests.Services
         }
 
         [TestMethod]
-        [DataRow("randomfilepath.txt")]
+        [DataRow("randomfilepathwhichdoesnotexist.txt")]
         public void WhenReadFileIntoByteArrayAsyncIsCalledWithNoExistFile_ThenFileNotFoundExceptionIsThrown(string path) 
         {
             // When & Then

@@ -169,6 +169,18 @@
       <Project>{099c9f3a-58c4-4f80-8eb7-ff5bcf2749bd}</Project>
       <Name>Shapr3D.Converter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Sharp3D.Converter.DataAccess\Sharp3D.Converter.DataAccess.csproj">
+      <Project>{3ED70823-AB45-491F-8D46-36B14A5FDE90}</Project>
+      <Name>Sharp3D.Converter.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Sharp3D.Converter.Models\Sharp3D.Converter.Models.csproj">
+      <Project>{1367D1A2-5CA5-419A-A9BB-78DD2D3CB4C0}</Project>
+      <Name>Sharp3D.Converter.Models</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Sharp3D.Converter.Ui\Sharp3D.Converter.Ui.csproj">
+      <Project>{93997740-FF09-4C79-B58B-BB5F78CC054F}</Project>
+      <Name>Sharp3D.Converter.Ui</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="input\testFile.sharp" />

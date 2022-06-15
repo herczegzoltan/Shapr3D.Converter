@@ -89,7 +89,6 @@ namespace Shapr3D.Converter.UnitTests.Services
             Assert.IsTrue(cts.IsCancellationRequested);
         }
 
-
         private byte[] DummyConverter(byte[] input) => input;
     }
 }
