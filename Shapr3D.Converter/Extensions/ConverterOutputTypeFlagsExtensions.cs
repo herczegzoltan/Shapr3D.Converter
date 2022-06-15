@@ -1,9 +1,8 @@
 ﻿using Shapr3D.Converter.Enums;
-using Shapr3D.Converter.ViewModels;
 using Sharp3D.Converter.Models;
 using System;
 
-namespace Shapr3D.Converter.Helpers
+namespace Shapr3D.Converter.Extensions
 {
     public static class ConverterOutputTypeFlagsExtensions
     {
