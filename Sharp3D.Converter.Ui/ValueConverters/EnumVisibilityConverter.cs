@@ -33,8 +33,7 @@ namespace Shapr3D.Converter.Ui.ValueConverters
             return found ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter,
-            string language)
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
             throw new NotImplementedException();
         }

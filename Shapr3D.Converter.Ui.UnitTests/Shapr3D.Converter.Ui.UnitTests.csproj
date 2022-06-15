@@ -124,6 +124,8 @@
       <DependentUpon>UnitTestApp.xaml</DependentUpon>
     </Compile>
     <Compile Include="ValueConverters\BooleanToVisibilityConverterTests.cs" />
+    <Compile Include="ValueConverters\EnumVisibilityConverterTests.cs" />
+    <Compile Include="ValueConverters\NotNullBooleanConverterTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="UnitTestApp.xaml">
