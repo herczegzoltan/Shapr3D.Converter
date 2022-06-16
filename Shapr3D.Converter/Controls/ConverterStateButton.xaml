@@ -12,40 +12,23 @@
     <UserControl.Resources>
         <conv:EnumVisibilityConverter x:Name="enumVisibilityConverter"/>
     </UserControl.Resources>
-    <Button Margin="10" HorizontalAlignment="Stretch" Command="{x:Bind Command}" CommandParameter="{x:Bind CommandParameter}">
-        <Grid>
-            <Grid.Resources>
-                <Style TargetType="Border" >
-                    <Setter Property="Padding" Value="5,5,5,5" />
-                </Style>
-            </Grid.Resources>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Border Grid.Column="0" Grid.Row="1" Grid.RowSpan="3">
-                <ProgressRing IsActive="True" Foreground="Black" Visibility="{x:Bind ConversionState, Mode=OneWay, Converter={StaticResource enumVisibilityConverter},
+
+    <Button Margin="10" x:Name="test" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Command="{x:Bind Command}" CommandParameter="{x:Bind CommandParameter}">
+        <Button.Content>
+            <StackPanel Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                    <ProgressRing IsActive="True" Foreground="Black" Visibility="{x:Bind ConversionState, Mode=OneWay, Converter={StaticResource enumVisibilityConverter},
                         ConverterParameter='Converting'}"></ProgressRing>
-            </Border>
-            <Border Grid.Column="0" Grid.Row="1" Grid.RowSpan="3" HorizontalAlignment="Left">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;" Visibility="{x:Bind ConversionState, Mode=OneWay, Converter={StaticResource enumVisibilityConverter},
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;" Visibility="{x:Bind ConversionState, Mode=OneWay, Converter={StaticResource enumVisibilityConverter},
                         ConverterParameter='NotStarted'}"/>
-            </Border>
-            <Border Grid.Column="0" Grid.Row="1" Grid.RowSpan="3">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74E;" Visibility="{x:Bind ConversionState, Mode=OneWay, Converter={StaticResource enumVisibilityConverter},
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74E;" Visibility="{x:Bind ConversionState, Mode=OneWay, Converter={StaticResource enumVisibilityConverter},
                         ConverterParameter='Converted'}"/>
-            </Border>
-            <Border Grid.Column="1" Grid.Row="1">
-                <TextBlock Text="{x:Bind Text, Mode=OneWay}" />
-            </Border>
-            <Border Grid.Column="1" Grid.Row="2">
-                <ProgressBar HorizontalAlignment="Stretch" Value="{x:Bind Progress, Mode=OneWay}" Foreground="#00a7ff"></ProgressBar>
-            </Border>
-        </Grid>
+                    <TextBlock Text="{x:Bind Text, Mode=OneWay}" HorizontalAlignment="Left" />
+                </StackPanel>
+                <StackPanel Padding="5">
+                    <ProgressBar HorizontalAlignment="Stretch" Value="{x:Bind Progress, Mode=OneWay}" Foreground="#00a7ff"></ProgressBar>
+                </StackPanel>
+            </StackPanel>
+        </Button.Content>
     </Button>
 </UserControl>
