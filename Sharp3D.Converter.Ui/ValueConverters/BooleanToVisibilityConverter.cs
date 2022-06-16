@@ -27,10 +27,6 @@ namespace Shapr3D.Converter.Ui.ValueConverters
             {
                 return Visibility.Visible;
             }
-            else if ((bool)value == false && isReverse == false)
-            {
-                return Visibility.Collapsed;
-            }
             else
             {
                 return Visibility.Collapsed;

@@ -55,6 +55,10 @@ namespace Shapr3D.Converter
             throw new Exception("Failed to load Page " + e.SourcePageType.FullName);
         }
 
+        /// <summary>
+        /// Configure all the required services/classes
+        /// </summary>
+        /// <returns></returns>
         IServiceProvider ConfigureDependencyInjection()
         {
             var serviceCollection = new ServiceCollection();

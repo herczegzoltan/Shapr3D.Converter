@@ -153,9 +153,6 @@ namespace Shapr3D.Converter.ViewModels
 
                     Files.Add(model);
                 }
-                else
-                {
-                }
             }
             catch (Exception ex)
             {
