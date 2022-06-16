@@ -87,7 +87,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             _ = sut.InitAsync();
 
             // Then
-            _dialogServiceMock.Verify(d => d.ShowExceptionModalDialog(specificException, It.IsAny<string>()));
+            _dialogServiceMock.Verify(d => d.ShowExceptionModalDialog(specificException, It.IsAny<string>(), It.IsAny<string>()));
         }
 
 
@@ -126,7 +126,7 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
             sut.DeleteAllCommand.Execute(null);
 
             // Then
-            _dialogServiceMock.Verify(d => d.ShowExceptionModalDialog(specificException, It.IsAny<string>()));
+            _dialogServiceMock.Verify(d => d.ShowExceptionModalDialog(specificException, It.IsAny<string>(), It.IsAny<string>()));
         }
 
         [TestMethod]
