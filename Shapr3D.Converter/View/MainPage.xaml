@@ -20,11 +20,13 @@
             <AppBarButton
                 Command="{x:Bind ViewModel.AddCommand}"
                 Icon="Add"
-                Label="Convert new file" />
+                Label="Convert new file" 
+                IsEnabled="{x:Bind ViewModel.AreActionFieldsEnabled, Mode=OneWay}"/>
             <AppBarButton
                 Command="{x:Bind ViewModel.DeleteAllCommand}"
                 Icon="Delete"
-                Label="Delete All" />
+                Label="Delete All" 
+                IsEnabled="{x:Bind ViewModel.AreActionFieldsEnabled, Mode=OneWay}"/>
         </CommandBar>
     </Page.TopAppBar>
     <SplitView
@@ -52,34 +54,36 @@
                     <TextBlock Margin="0,12,0,0" Text="Original file size:" />
                     <TextBlock Text="{x:Bind ViewModel.SelectedFile.FileSizeFormatted, Mode=OneWay}" />
 
-                    <StackPanel
-                        Margin="0,24,0,0"
-                        HorizontalAlignment="Stretch"
-                        Orientation="Vertical">
-                        <StackPanel Orientation="Vertical">
-                            <controls:ConverterStateButton
-                                Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
-                                CommandParameter="{x:Bind vms:ConverterOutputType.Obj}"
-                                ConversionState="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.State, Mode=OneWay}"
-                                Progress="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.Progress, Mode=OneWay}"
-                                Text="Shapr to .Obj"
-                                IsEnabled="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
-                            <controls:ConverterStateButton
-                                Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
-                                CommandParameter="{x:Bind vms:ConverterOutputType.Stl}"
-                                ConversionState="{x:Bind ViewModel.SelectedFile.StlConversionInfo.State, Mode=OneWay}"
-                                Progress="{x:Bind ViewModel.SelectedFile.StlConversionInfo.Progress, Mode=OneWay}"
-                                Text="Shapr to .Stl"
-                                IsEnabled="{x:Bind ViewModel.SelectedFile.StlConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
-                            <controls:ConverterStateButton
-                                Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
-                                CommandParameter="{x:Bind vms:ConverterOutputType.Step}"
-                                ConversionState="{x:Bind ViewModel.SelectedFile.StepConversionInfo.State, Mode=OneWay}"
-                                Progress="{x:Bind ViewModel.SelectedFile.StepConversionInfo.Progress, Mode=OneWay}"
-                                Text="Shapr to .Step" 
-                                IsEnabled="{x:Bind ViewModel.SelectedFile.StepConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
-                        </StackPanel>
-                    </StackPanel>
+                    <ContentControl IsEnabled="{x:Bind ViewModel.AreActionFieldsEnabled, Mode=OneWay}" HorizontalContentAlignment="Stretch">
+                        <StackPanel
+                            Margin="0,24,0,0"
+                            HorizontalAlignment="Stretch"
+                            Orientation="Vertical">
+                                <StackPanel Orientation="Vertical">
+                                    <controls:ConverterStateButton
+                                    Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
+                                    CommandParameter="{x:Bind vms:ConverterOutputType.Obj}"
+                                    ConversionState="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.State, Mode=OneWay}"
+                                    Progress="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.Progress, Mode=OneWay}"
+                                    Text="Shapr to .Obj"
+                                    IsEnabled="{x:Bind ViewModel.SelectedFile.ObjConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
+                                        <controls:ConverterStateButton
+                                    Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
+                                    CommandParameter="{x:Bind vms:ConverterOutputType.Stl}"
+                                    ConversionState="{x:Bind ViewModel.SelectedFile.StlConversionInfo.State, Mode=OneWay}"
+                                    Progress="{x:Bind ViewModel.SelectedFile.StlConversionInfo.Progress, Mode=OneWay}"
+                                    Text="Shapr to .Stl"
+                                    IsEnabled="{x:Bind ViewModel.SelectedFile.StlConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
+                                        <controls:ConverterStateButton
+                                    Command="{x:Bind ViewModel.ConvertActionCommand, Mode=OneWay}"
+                                    CommandParameter="{x:Bind vms:ConverterOutputType.Step}"
+                                    ConversionState="{x:Bind ViewModel.SelectedFile.StepConversionInfo.State, Mode=OneWay}"
+                                    Progress="{x:Bind ViewModel.SelectedFile.StepConversionInfo.Progress, Mode=OneWay}"
+                                    Text="Shapr to .Step" 
+                                    IsEnabled="{x:Bind ViewModel.SelectedFile.StepConversionInfo.IsCancellingAvailable, Mode=OneWay}"/>
+                                </StackPanel>
+                            </StackPanel>
+                    </ContentControl>
                 </StackPanel>
             </ScrollViewer>
         </SplitView.Pane>

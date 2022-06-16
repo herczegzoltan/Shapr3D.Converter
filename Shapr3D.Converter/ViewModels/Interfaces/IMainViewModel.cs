@@ -15,6 +15,11 @@ namespace Shapr3D.Converter.ViewModels.Interfaces
         ObservableCollection<FileViewModel> Files { get; }
 
         /// <summary>
+        /// Preventing that the user accidentally opens conversion actions twice (fast double click on Add/Delete/Close/Save could have opened dialog twice).
+        /// </summary>
+        bool AreActionFieldsEnabled { get; set; }
+
+        /// <summary>
         /// Occurs when this view model has updated the selected file.
         /// </summary>
         event PropertyChangedEventHandler PropertyChanged;

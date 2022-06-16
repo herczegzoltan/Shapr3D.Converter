@@ -33,6 +33,7 @@ namespace Shapr3D.Converter.ViewModels
         private readonly FileSavePicker _fileSavePicker;
 
         // Getter/setter backup fields
+        private bool _areActionFieldsEnabled;
         private FileViewModel _selectedFile;
         private const string FileTypeFilter = ".shapr";
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
@@ -48,6 +49,8 @@ namespace Shapr3D.Converter.ViewModels
             FileOpenPicker fileOpenPicker,
             FileSavePicker fileSavePicker)
         {
+            AreActionFieldsEnabled = true;
+
             // Initialize commands
             _dialogService = dialogService;
             _unitOfWork = unitOfWork;
@@ -91,6 +94,22 @@ namespace Shapr3D.Converter.ViewModels
             }
         }
 
+        public bool AreActionFieldsEnabled
+        {
+            get
+            {
+                return _areActionFieldsEnabled;
+            }
+            set
+            {
+                if (_areActionFieldsEnabled != value)
+                {
+                    _areActionFieldsEnabled = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AreActionFieldsEnabled)));
+                }
+            }
+        }
+
         public ObservableCollection<FileViewModel> Files { get; } = new ObservableCollection<FileViewModel>();
 
         /* --------------------------------------------
@@ -108,6 +127,8 @@ namespace Shapr3D.Converter.ViewModels
         {
             try
             {
+                AreActionFieldsEnabled = false;
+
                 StorageFile file = await _fileOpenPicker.PickSingleFileAsync();
                 if (file != null)
                 {
@@ -124,6 +145,10 @@ namespace Shapr3D.Converter.ViewModels
             catch (Exception ex)
             {
                 await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "adding a new file."));
+            }
+            finally
+            {
+                AreActionFieldsEnabled = true;
             }
         }
 
@@ -189,10 +214,10 @@ namespace Shapr3D.Converter.ViewModels
                     conversionInfoOfSelectedFile.CancellationTokenSource,
                     ModelConverter.ConvertChunk,
                     input);
-                
+
                 conversionInfoOfSelectedFile.ConvertedResult = result;
                 conversionInfoOfSelectedFile.State = ConversionState.Converted;
-                
+
                 await _unitOfWork.ModelEntity.Update(_selectedFile.ToModelEntity());
                 await _unitOfWork.Save();
             }
@@ -222,6 +247,8 @@ namespace Shapr3D.Converter.ViewModels
         {
             try
             {
+                AreActionFieldsEnabled = false;
+
                 _fileSavePicker.FileTypeChoices.Clear();
                 _fileSavePicker.FileTypeChoices.Add(string.Format("{0} file",
                     outputType.ToString().ToLower()),
@@ -229,6 +256,7 @@ namespace Shapr3D.Converter.ViewModels
                     outputType.ToString().ToLower()) });
 
                 _fileSavePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(model.OriginalPath);
+
                 var savedFile = await _fileSavePicker.PickSaveFileAsync();
 
                 // References from https://docs.microsoft.com/en-us/windows/uwp/files/best-practices-for-writing-to-files
@@ -259,6 +287,10 @@ namespace Shapr3D.Converter.ViewModels
             {
                 await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "saving the file."));
             }
+            finally 
+            {
+                AreActionFieldsEnabled = true;
+            }
         }
 
         private async void DeleteAll()
@@ -267,6 +299,8 @@ namespace Shapr3D.Converter.ViewModels
             {
                 if (Files.Count > 0)
                 {
+                    AreActionFieldsEnabled = false;
+
                     var title = _resourceLoader.GetString("ConfirmationMessage");
                     var description = _resourceLoader.GetString("AreSureRemoveMessage");
 
@@ -276,8 +310,8 @@ namespace Shapr3D.Converter.ViewModels
                         description = _resourceLoader.GetString("AreSureRemoveInProgressMessage");
                     }
 
-                    var result = await _dialogService.ShowBlockingQuestionModalDialog(title,description);
-                    
+                    var result = await _dialogService.ShowBlockingQuestionModalDialog(title, description);
+
                     if (result ?? false)
                     {
                         foreach (var model in Files)
@@ -296,6 +330,10 @@ namespace Shapr3D.Converter.ViewModels
             catch (Exception ex)
             {
                 await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "delete all files."));
+            }
+            finally 
+            {
+                AreActionFieldsEnabled  = true;
             }
         }
     }
