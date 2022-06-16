@@ -133,7 +133,7 @@
     <value>Conversion is in progress</value>
   </data>
   <data name="CouldNotConvertMessage" xml:space="preserve">
-    <value>The file could not be converted.</value>
+    <value>The file could not be converted, please try again.</value>
   </data>
   <data name="ReadMeMessage" xml:space="preserve">
     <value>{0} (Read README.md for instructions.)</value>
