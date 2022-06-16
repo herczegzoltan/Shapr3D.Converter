@@ -35,7 +35,6 @@ namespace Shapr3D.Converter.ViewModels
         // Getter/setter backup fields
         private FileViewModel _selectedFile;
         private const string FileTypeFilter = ".shapr";
-        private const string AllFileTypeFilter = "*";
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         private const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
@@ -60,7 +59,6 @@ namespace Shapr3D.Converter.ViewModels
             _fileOpenPicker.ViewMode = PickerViewMode.Thumbnail;
             _fileOpenPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
             _fileOpenPicker.FileTypeFilter.Add(FileTypeFilter);
-            _fileOpenPicker.FileTypeFilter.Add(AllFileTypeFilter);
 
             // Initialize files
             _ = InitAsync();
