@@ -269,18 +269,13 @@ namespace Shapr3D.Converter.ViewModels
             {
                 if (Files.Count > 0)
                 {
-                    var title = string.Empty;
-                    var description = string.Empty;
+                    var title = _resourceLoader.GetString("ConfirmationMessage");
+                    var description = _resourceLoader.GetString("AreSureRemoveMessage");
 
                     if (Files.Any(_ => _.IsConverting))
                     {
                         title = _resourceLoader.GetString("ConversionInProgressMessage");
                         description = _resourceLoader.GetString("AreSureRemoveInProgressMessage");
-                    }
-                    else 
-                    {
-                        title = _resourceLoader.GetString("ConfirmationMessage");
-                        description = _resourceLoader.GetString("AreSureRemoveMessage");
                     }
 
                     var result = await _dialogService.ShowBlockingQuestionModalDialog(title,description);
