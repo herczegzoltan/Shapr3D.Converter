@@ -7,6 +7,7 @@ using Windows.Storage;
 
 namespace Shapr3D.Converter.Services
 {
+    /// <inheritdoc/>
     public class FileReaderService : IFileReaderService
     {
         public async Task<byte[]> ReadFileIntoByteArrayAsync(string path)

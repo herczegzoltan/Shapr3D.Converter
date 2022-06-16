@@ -20,17 +20,35 @@ namespace Shapr3D.Converter.ViewModels
 {
     public interface IMainViewModel : INotifyPropertyChanged
     {
+        /// <summary>
+        /// Represents the selected file as view model.
+        /// </summary>
+        FileViewModel SelectedFile { get; set; }
+        ObservableCollection<FileViewModel> Files { get; }
+
+        /// <summary>
+        /// Occurs when this view model has updated the selected file.
+        /// </summary>
+        event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Add new file into the file collection.
+        /// </summary>
+        void Add();
+
+        /// <summary>
+        /// Called before the project is started.
+        /// </summary>
+        /// <returns>Context representing the asynchronous operation.</returns>
+        Task InitAsync();
+
+        /// <summary>
+        /// ICommand implementations for user interface.
+        /// </summary>
         RelayCommand AddCommand { get; }
         RelayCommand CloseDetailsCommand { get; }
         RelayCommand<ConverterOutputType> ConvertActionCommand { get; }
         RelayCommand DeleteAllCommand { get; }
-        ObservableCollection<FileViewModel> Files { get; }
-        FileViewModel SelectedFile { get; set; }
-
-        event PropertyChangedEventHandler PropertyChanged;
-
-        void Add();
-        Task InitAsync();
     }
 
     public class MainViewModel : IMainViewModel
@@ -51,6 +69,7 @@ namespace Shapr3D.Converter.ViewModels
         private const Int32 ErrorAccessDenied = unchecked((Int32)0x80070005);
         private const Int32 ErrorSharingViolation = unchecked((Int32)0x80070020);
 
+        // DI container picks up the constructor with the parameters
         public MainViewModel(
             IDialogService dialogService,
             IUnitOfWork unitOfWork,
@@ -60,6 +79,7 @@ namespace Shapr3D.Converter.ViewModels
             FileOpenPicker fileOpenPicker,
             FileSavePicker fileSavePicker)
         {
+            // Initialize commands
             _dialogService = dialogService;
             _unitOfWork = unitOfWork;
             _fileConverterService = fileConverterService;
@@ -72,9 +92,10 @@ namespace Shapr3D.Converter.ViewModels
             _fileOpenPicker.FileTypeFilter.Add(FileTypeFilter);
             _fileOpenPicker.FileTypeFilter.Add(AllFileTypeFilter);
 
-            // Rework Load with navigation to? 
+            // Initialize files
             _ = InitAsync();
 
+            // Initialize commands
             AddCommand = new RelayCommand(Add);
             DeleteAllCommand = new RelayCommand(DeleteAll);
             ConvertActionCommand = new RelayCommand<ConverterOutputType>(ConvertAction);
@@ -103,6 +124,11 @@ namespace Shapr3D.Converter.ViewModels
         }
 
         public ObservableCollection<FileViewModel> Files { get; } = new ObservableCollection<FileViewModel>();
+
+
+        /* --------------------------------------------
+         * Commands
+         * -------------------------------------------- */
         public RelayCommand AddCommand { get; }
         public RelayCommand DeleteAllCommand { get; }
         public RelayCommand<ConverterOutputType> ConvertActionCommand { get; }
@@ -198,7 +224,7 @@ namespace Shapr3D.Converter.ViewModels
                 var result = await _fileConverterService.ApplyConverterAndReportAsync(
                     progress,
                     conversionInfoOfSelectedFile.CancellationTokenSource,
-                    DummyConvertChunk,
+                    ModelConverter.ConvertChunk,
                     input);
                 
                 conversionInfoOfSelectedFile.ConvertedResult = result;
@@ -227,26 +253,6 @@ namespace Shapr3D.Converter.ViewModels
                 _selectedFile.ResetProperties(type);
                 await _dialogService.ShowExceptionModalDialog(ex, string.Format(_resourceLoader.GetString("UnexpectedError"), "converting the file."));
             }
-        }
-
-        public static byte[] DummyConvertChunk(byte[] bytes)
-        {
-            int num = bytes.Length;
-            int num2 = 300000;
-            int num3 = (int)Math.Pow(2.0, num / 1000000) * 1000;
-            byte[] array = new byte[num];
-            for (int i = 0; i < array.Length; i++)
-            {
-                array[i] = bytes[num - i - 1];
-            }
-
-            int num4 = new Random().Next(0, 1000);
-            if (num4 == 0)
-            {
-                throw new ConversionFailedException($"Conversion failed. Error code {num4}");
-            }
-
-            return array;
         }
 
         private async void Save(FileViewModel model, ConverterOutputType outputType)

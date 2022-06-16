@@ -7,8 +7,13 @@ namespace Shapr3D.Converter.Ui.ValueConverters
     public class EnumVisibilityConverter : IValueConverter
     {
         /// <summary>
-        /// The target enum value.
+        /// Convert enum to visibility.
         /// </summary>
+        /// <param name="value">Any enum type</param>
+        /// <param name="targetType">Not required</param>
+        /// <param name="parameter">Any string.</param>
+        /// <param name="language">Not required</param>
+        /// <returns>Returnes visible if the enum's ToString and the passed string are equal otherwise collaped.</returns>
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             if (value == null || parameter == null || !(value is Enum)) 

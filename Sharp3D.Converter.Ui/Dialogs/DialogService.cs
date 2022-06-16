@@ -4,7 +4,7 @@ using Windows.UI.Popups;
 
 namespace Sharp3D.Converter.Ui.Dialogs
 {
-    // Referenced https://docs.microsoft.com/en-us/uwp/api/windows.ui.popups.messagedialog?view=winrt-22621
+    /// <inheritdoc/>
     public class DialogService : IDialogService
     {
         public async Task ShowExceptionModalDialog(Exception ex, string description = null, string buttonContent = "Ok")
@@ -14,11 +14,13 @@ namespace Sharp3D.Converter.Ui.Dialogs
                 var title = "Exception thrown";
                 var content = $"{ex.Message} {description}";
                 var cancelCommand = new UICommand(buttonContent, cmd => {});
-                
-                var dialog = new MessageDialog(content, title);
-                dialog.Options = MessageDialogOptions.None;
-                dialog.DefaultCommandIndex = 0;
-                dialog.CancelCommandIndex = 0;
+
+                var dialog = new MessageDialog(content, title)
+                {
+                    Options = MessageDialogOptions.None,
+                    DefaultCommandIndex = 0,
+                    CancelCommandIndex = 0
+                };
 
                 if (cancelCommand != null)
                 {
@@ -41,11 +43,13 @@ namespace Sharp3D.Converter.Ui.Dialogs
                 var primaryCommand = new UICommand(primary, cmd => { });
                 var secondaryCommand = new UICommand(secondary, cmd => { });
 
-                var dialog = new MessageDialog(description, title);
-                dialog.Options = MessageDialogOptions.None;
+                var dialog = new MessageDialog(description, title)
+                {
+                    Options = MessageDialogOptions.None,
+                    DefaultCommandIndex = 0,
+                    CancelCommandIndex = 0
+                };
                 dialog.Commands.Add(primaryCommand);
-                dialog.DefaultCommandIndex = 0;
-                dialog.CancelCommandIndex = 0;
 
                 if (secondaryCommand != null)
                 {
@@ -68,11 +72,13 @@ namespace Sharp3D.Converter.Ui.Dialogs
             try
             {
                 var cancelCommand = new UICommand(buttonContent, cmd => { });
-                
-                var dialog = new MessageDialog(description, title);
-                dialog.Options = MessageDialogOptions.None;
-                dialog.DefaultCommandIndex = 0;
-                dialog.CancelCommandIndex = 0;
+
+                var dialog = new MessageDialog(description, title)
+                {
+                    Options = MessageDialogOptions.None,
+                    DefaultCommandIndex = 0,
+                    CancelCommandIndex = 0
+                };
 
                 if (cancelCommand != null)
                 {

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace Shapr3D.Converter.Services
 {
+    /// <inheritdoc/>
     public class FileConverterService : IFileConverterService
     {
         private const int MaxDegreeOfParallelism = 8;
@@ -69,6 +70,12 @@ namespace Shapr3D.Converter.Services
             return chunksBagInOrder.Values.SelectMany(x => x).ToArray();
         }
 
+        /// <summary>
+        /// Split a byte[] into chunks with specific length and index each chunk to keep the order
+        /// </summary>
+        /// <param name="value">The array to be split</param>
+        /// <param name="bufferLength">The length of each chunk</param>
+        /// <returns>An enumerable tuple with Item1=index of the chunk, Item2=chunk array</returns>
         private IEnumerable<(int, byte[])> SplitByteArrayIntoNChunksWithIndex(byte[] value, int bufferLength)
         {
             int countOfArray = value.Length / bufferLength;
