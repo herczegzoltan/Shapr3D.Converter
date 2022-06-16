@@ -1,20 +1,32 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Windows.UI.Xaml.Controls;
+using Windows.UI.Popups;
 
 namespace Sharp3D.Converter.Ui.Dialogs
 {
-    public class DialogService : ContentDialog, IDialogService
+    // Referenced https://docs.microsoft.com/en-us/uwp/api/windows.ui.popups.messagedialog?view=winrt-22621
+    public class DialogService : IDialogService
     {
-        public async Task ShowExceptionModalDialog(Exception ex, string description = null)
+        public async Task ShowExceptionModalDialog(Exception ex, string description = null, string buttonContent = "Ok")
         {
             try
             {
-                Title = "Exception thrown";
-                Content = $"{ex.Message} {description}";
-                CloseButtonText = "Ok";
+                var title = "Exception thrown";
+                var content = $"{ex.Message} {description}";
+                var cancelCommand = new UICommand(buttonContent, cmd => {});
+                
+                var dialog = new MessageDialog(content, title);
+                dialog.Options = MessageDialogOptions.None;
+                dialog.DefaultCommandIndex = 0;
+                dialog.CancelCommandIndex = 0;
 
-                await ShowAsync();
+                if (cancelCommand != null)
+                {
+                    dialog.Commands.Add(cancelCommand);
+                    dialog.CancelCommandIndex = (uint)dialog.Commands.Count - 1;
+                }
+
+                _ = await dialog.ShowAsync();
             }
             catch (Exception)
             {
@@ -26,14 +38,24 @@ namespace Sharp3D.Converter.Ui.Dialogs
         {
             try
             {
-                Title = title;
-                Content = description;
-                PrimaryButtonText = primary;
-                CloseButtonText = secondary;
+                var primaryCommand = new UICommand(primary, cmd => { });
+                var secondaryCommand = new UICommand(secondary, cmd => { });
 
-                var result = await ShowAsync();
+                var dialog = new MessageDialog(description, title);
+                dialog.Options = MessageDialogOptions.None;
+                dialog.Commands.Add(primaryCommand);
+                dialog.DefaultCommandIndex = 0;
+                dialog.CancelCommandIndex = 0;
 
-                return result == ContentDialogResult.Primary;
+                if (secondaryCommand != null)
+                {
+                    dialog.Commands.Add(secondaryCommand);
+                    dialog.CancelCommandIndex = (uint)dialog.Commands.Count - 1;
+                }
+
+                var command = await dialog.ShowAsync();
+
+                return command == primaryCommand;
             }
             catch (Exception ex)
             {
@@ -41,15 +63,24 @@ namespace Sharp3D.Converter.Ui.Dialogs
             }
         }
 
-        public async Task ShowOkModalDialog(string tilte, string description)
+        public async Task ShowOkModalDialog(string title, string description, string buttonContent = "Ok")
         {
             try
             {
-                Title = tilte;
-                Content = description;
-                CloseButtonText = "Ok";
+                var cancelCommand = new UICommand(buttonContent, cmd => { });
+                
+                var dialog = new MessageDialog(description, title);
+                dialog.Options = MessageDialogOptions.None;
+                dialog.DefaultCommandIndex = 0;
+                dialog.CancelCommandIndex = 0;
 
-                await ShowAsync();
+                if (cancelCommand != null)
+                {
+                    dialog.Commands.Add(cancelCommand);
+                    dialog.CancelCommandIndex = (uint)dialog.Commands.Count - 1;
+                }
+
+                _ = await dialog.ShowAsync();
             }
             catch (Exception ex)
             {

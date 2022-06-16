@@ -1,5 +1,0 @@
-- TODOs
-- Permissions
-- Ui
-- UnitTest
-- Fix temp Ui
