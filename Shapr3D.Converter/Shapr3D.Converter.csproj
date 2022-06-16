@@ -63,6 +63,8 @@
     <Compile Include="Services\IFileReaderService.cs" />
     <Compile Include="ViewModels\FileViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewModels\Interfaces\IFileViewModel.cs" />
+    <Compile Include="ViewModels\Interfaces\IMainViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="View\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

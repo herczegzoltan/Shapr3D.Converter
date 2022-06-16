@@ -2,6 +2,7 @@
 using Shapr3D.Converter.Enums;
 using Shapr3D.Converter.Infrastructure;
 using Shapr3D.Converter.Services;
+using Shapr3D.Converter.ViewModels.Interfaces;
 using Sharp3D.Converter.DataAccess.Repository.IRepository;
 using Sharp3D.Converter.Models;
 using Sharp3D.Converter.Ui.Dialogs;
@@ -19,39 +20,7 @@ using Windows.Storage.Pickers;
 
 namespace Shapr3D.Converter.ViewModels
 {
-    public interface IMainViewModel : INotifyPropertyChanged
-    {
-        /// <summary>
-        /// Represents the selected file as view model.
-        /// </summary>
-        FileViewModel SelectedFile { get; set; }
-        ObservableCollection<FileViewModel> Files { get; }
-
-        /// <summary>
-        /// Occurs when this view model has updated the selected file.
-        /// </summary>
-        event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// Add new file into the file collection.
-        /// </summary>
-        void Add();
-
-        /// <summary>
-        /// Called before the project is started.
-        /// </summary>
-        /// <returns>Context representing the asynchronous operation.</returns>
-        Task InitAsync();
-
-        /// <summary>
-        /// ICommand implementations for user interface.
-        /// </summary>
-        RelayCommand AddCommand { get; }
-        RelayCommand CloseDetailsCommand { get; }
-        RelayCommand<ConverterOutputType> ConvertActionCommand { get; }
-        RelayCommand DeleteAllCommand { get; }
-    }
-
+    /// <inheritdoc/>
     public class MainViewModel : IMainViewModel
     {
         // Infrastructure fields
