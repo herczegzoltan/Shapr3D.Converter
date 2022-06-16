@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Resources;
@@ -125,7 +126,6 @@ namespace Shapr3D.Converter.ViewModels
 
         public ObservableCollection<FileViewModel> Files { get; } = new ObservableCollection<FileViewModel>();
 
-
         /* --------------------------------------------
          * Commands
          * -------------------------------------------- */
@@ -137,7 +137,6 @@ namespace Shapr3D.Converter.ViewModels
         /* ============================================
          * Public methods
          * ============================================ */
-
         public async void Add()
         {
             try
@@ -304,9 +303,22 @@ namespace Shapr3D.Converter.ViewModels
             {
                 if (Files.Count > 0)
                 {
-                    var result = await _dialogService.ShowBlockingQuestionModalDialog(
-                    _resourceLoader.GetString("ConfirmationMessage"),
-                    _resourceLoader.GetString("AreSureRemoveMessage"));
+                    var title = string.Empty;
+                    var description = string.Empty;
+
+                    if (Files.Any(_ => _.IsConverting))
+                    {
+                        title = _resourceLoader.GetString("ConversionInProgressMessage");
+                        description = _resourceLoader.GetString("AreSureRemoveInProgressMessage");
+                    }
+                    else 
+                    {
+                        title = _resourceLoader.GetString("ConfirmationMessage");
+                        description = _resourceLoader.GetString("AreSureRemoveMessage");
+                    }
+
+                    var result = await _dialogService.ShowBlockingQuestionModalDialog(title,description);
+                    
                     if (result ?? false)
                     {
                         foreach (var model in Files)
