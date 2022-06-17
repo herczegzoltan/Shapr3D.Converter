@@ -20,7 +20,6 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
     [TestClass]
     public class MainViewModelTests
     {
-        private Mock<IFileViewModel> _fileViewModel;
         private Mock<IUnitOfWork> _unitOfWorkMock;
         private Mock<IModelEntityRepository> _modelEntityRepositoryMock;
         private Mock<IDialogService> _dialogServiceMock;
@@ -31,7 +30,6 @@ namespace Shapr3D.Converter.UnitTests.ViewModels
         [TestInitialize]
         public void Initialize()
         {
-            _fileViewModel = new Mock<IFileViewModel>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _modelEntityRepositoryMock = new Mock<IModelEntityRepository>();
             _dialogServiceMock = new Mock<IDialogService>();

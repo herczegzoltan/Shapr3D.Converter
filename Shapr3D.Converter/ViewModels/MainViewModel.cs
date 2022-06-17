@@ -238,10 +238,10 @@ namespace Shapr3D.Converter.ViewModels
                 _selectedFile.ResetProperties(type);
                 await _dialogService.ShowOkModalDialog(_resourceLoader.GetString("ConfirmationMessage"), _resourceLoader.GetString("CancelledMessage"));
             }
-            catch (FileConversionException ex)
+            catch (FileConversionException)
             {
                 _selectedFile.ResetProperties(type);
-                await _dialogService.ShowExceptionModalDialog(ex, _resourceLoader.GetString("CouldNotConvertMessage"));
+                await _dialogService.ShowOkModalDialog(_resourceLoader.GetString("FailMessage"), _resourceLoader.GetString("CouldNotConvertMessage"));
             }
             catch (Exception ex)
             {

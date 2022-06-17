@@ -10,6 +10,7 @@ namespace Shapr3D.Converter.Services
     /// <inheritdoc/>
     public class FileConverterService : IFileConverterService
     {
+        // As small the length of the created array chunk is large, as large the length of the created array is small
         private const int NumberOfChunks = 100;
 
         public async Task<byte[]> ApplyConverterAndReportAsync(
@@ -30,27 +31,17 @@ namespace Shapr3D.Converter.Services
                 var chunks = await Task.Run(() => SplitByteArrayIntoNChunksWithIndex(source, bufferSize));
 
                 var parallelOptions = new ParallelOptions { CancellationToken = cancellationTokenSource.Token };
-                var taskCompleted = 0;
+                var taskCompleted = 1;
                 var lockTarget = new object();
 
                 await Task.Run(() =>
                 {
                     Parallel.ForEach(chunks, parallelOptions, (chunk, state) =>
                     {
-                        try
-                        {
-                            var result = appliedConverter(chunk.Value);
-                            chunksBagInOrder[chunk.Key] = result;
-                        }
-                        finally
-                        {
-                            lock (lockTarget)
-                            {
-                                taskCompleted++;
-                                var percentageComplete = (taskCompleted * 100) / NumberOfChunks;
-                                progress.Report(percentageComplete);
-                            }
-                        }
+                        var result = appliedConverter(chunk.Value);
+                        chunksBagInOrder[chunk.Key] = result;
+                        Interlocked.Increment(ref taskCompleted);
+                        progress.Report(taskCompleted);
                     });
                 });
             }

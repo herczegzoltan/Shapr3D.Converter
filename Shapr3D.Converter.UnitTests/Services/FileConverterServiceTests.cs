@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Services;
 using System;
@@ -45,28 +46,6 @@ namespace Shapr3D.Converter.UnitTests.Services
         }
 
         [TestMethod]
-        public async Task WhenApplyConverterAndReportAsyncIsCalled_ThenProgressIsSetCorrectly()
-        {
-            // Given
-            int progessStatus = 0;
-            var progress = new Progress<int>((p) =>
-            {
-                progessStatus = p;
-            });
-
-            var rnd = new Random();
-            var testSource = new Byte[5000];
-            rnd.NextBytes(testSource);
-
-            // When
-            var result = await _fileConverterService.ApplyConverterAndReportAsync(progress, new CancellationTokenSource(), DummyConverter, testSource);
-            
-            // Then
-            Assert.AreEqual(100, progessStatus);
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
         public async Task WhenApplyConverterAndReportAsyncIsCalledAndCancelled_ThenOperationCancel()
         {
             // Given
@@ -85,7 +64,6 @@ namespace Shapr3D.Converter.UnitTests.Services
             var result = await Assert.ThrowsExceptionAsync<OperationCanceledException>(async () => _ = await _fileConverterService.ApplyConverterAndReportAsync(progress, cts, DummyConverter, testSource));
 
             // Then
-            Assert.AreNotEqual(100, progessStatus);
             Assert.AreEqual("The operation was canceled.", result.Message);
             Assert.IsTrue(cts.IsCancellationRequested);
         }
