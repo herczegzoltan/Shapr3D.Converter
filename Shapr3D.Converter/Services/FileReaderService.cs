@@ -27,9 +27,9 @@ namespace Shapr3D.Converter.Services
 
                 return buffer.ToArray();
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
         }
     }
