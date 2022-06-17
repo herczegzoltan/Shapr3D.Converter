@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Shapr3D.Converter.Extensions;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,7 +10,6 @@ namespace Shapr3D.Converter.Services
     /// <inheritdoc/>
     public class FileConverterService : IFileConverterService
     {
-        private const int MaxDegreeOfParallelism = 8;
         private const int NumberOfChunks = 100;
 
         public async Task<byte[]> ApplyConverterAndReportAsync(
@@ -20,7 +19,6 @@ namespace Shapr3D.Converter.Services
             byte[] source)
         {
             var chunksBagInOrder = new ConcurrentDictionary<int, byte[]>();
-
             try
             {
                 _ = progress ?? throw new ArgumentNullException(nameof(progress));
@@ -28,8 +26,10 @@ namespace Shapr3D.Converter.Services
                 _ = appliedConverter ?? throw new ArgumentNullException(nameof(appliedConverter));
                 _ = source ?? throw new ArgumentNullException(nameof(source));
 
-                var chunks = await Task.Run(() => SplitByteArrayIntoNChunksWithIndex(source, (int)Math.Ceiling((double)source.Length / NumberOfChunks)));
-                var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism, CancellationToken = cancellationTokenSource.Token };
+                var bufferSize = (int)Math.Ceiling((double)source.Length / NumberOfChunks);
+                var chunks = await Task.Run(() => SplitByteArrayIntoNChunksWithIndex(source, bufferSize));
+
+                var parallelOptions = new ParallelOptions { CancellationToken = cancellationTokenSource.Token };
                 var taskCompleted = 0;
                 var lockTarget = new object();
 
@@ -39,8 +39,8 @@ namespace Shapr3D.Converter.Services
                     {
                         try
                         {
-                            var result = appliedConverter(chunk.Item2);
-                            chunksBagInOrder[chunk.Item1] = result;
+                            var result = appliedConverter(chunk.Value);
+                            chunksBagInOrder[chunk.Key] = result;
                         }
                         finally
                         {
@@ -54,21 +54,31 @@ namespace Shapr3D.Converter.Services
                     });
                 });
             }
-            catch (OperationCanceledException ex)
-            {
-                throw ex;
-            }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
                 throw;
             }
-            finally 
+            catch
+            {
+                throw new FileConversionException();
+            }
+            finally
             {
                 cancellationTokenSource.Dispose();
+                GC.Collect();
             }
 
-            return chunksBagInOrder.Values.SelectMany(x => x).ToArray();
+            // Create array result of the same order of the original incoming array
+            var arrayResultOfChunksBag = new List<byte>();
+
+            foreach (var item in chunksBagInOrder.Values)
+            {
+                arrayResultOfChunksBag.AddRange(item);
+            }
+
+            return arrayResultOfChunksBag.ToArray();
         }
+
 
         /// <summary>
         /// Split a byte[] into chunks with specific length and index each chunk to keep the order
@@ -76,17 +86,26 @@ namespace Shapr3D.Converter.Services
         /// <param name="value">The array to be split</param>
         /// <param name="bufferLength">The length of each chunk</param>
         /// <returns>An enumerable tuple with Item1=index of the chunk, Item2=chunk array</returns>
-        private IEnumerable<(int, byte[])> SplitByteArrayIntoNChunksWithIndex(byte[] value, int bufferLength)
+        private Dictionary<int, byte[]> SplitByteArrayIntoNChunksWithIndex(byte[] value, int bufferLength)
         {
+            Dictionary<int, byte[]> result = new Dictionary<int, byte[]>();
             int countOfArray = value.Length / bufferLength;
-            if (value.Length % bufferLength > 0)
-            {
-                countOfArray++;
-            }
             for (int i = 0; i < countOfArray; i++)
             {
-                yield return (i, value.Skip(i * bufferLength).Take(bufferLength).ToArray());
+                var singleSlice = new byte[bufferLength];
+
+                if ((value.Length - i*bufferLength) < bufferLength)
+                {
+                    Array.Copy(value, i * bufferLength, singleSlice, 0, value.Length - i * bufferLength);
+                }
+                else
+                {
+                    Array.Copy(value, i * bufferLength, singleSlice, 0, bufferLength);
+                }
+                result.Add(i, singleSlice);
             }
+
+            return result;
         }
     }
 }

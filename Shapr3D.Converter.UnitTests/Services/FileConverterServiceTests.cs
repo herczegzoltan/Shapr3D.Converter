@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Services;
 using System;
 using System.Threading;
@@ -66,7 +67,31 @@ namespace Shapr3D.Converter.UnitTests.Services
         }
 
         [TestMethod]
-        public async Task WhenApplyConverterAndReportAsyncIsCalledAndCancelled_ThenOperationCancell()
+        public async Task WhenApplyConverterAndReportAsyncIsCalledAndCancelled_ThenOperationCancel()
+        {
+            // Given
+            int progessStatus = 0;
+            var progress = new Progress<int>((p) =>
+            {
+                progessStatus = p;
+            });
+            var rnd = new Random();
+            var testSource = new Byte[10];
+            rnd.NextBytes(testSource);
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(0);
+
+            // When
+            var result = await Assert.ThrowsExceptionAsync<OperationCanceledException>(async () => _ = await _fileConverterService.ApplyConverterAndReportAsync(progress, cts, DummyConverter, testSource));
+
+            // Then
+            Assert.AreNotEqual(100, progessStatus);
+            Assert.AreEqual("The operation was canceled.", result.Message);
+            Assert.IsTrue(cts.IsCancellationRequested);
+        }
+        
+        [TestMethod]
+        public async Task WhenApplyConverterAndReportAsyncIsCalledAndError_ThenFileConversionExceptionIsThrown()
         {
             // Given
             int progessStatus = 0;
@@ -77,18 +102,16 @@ namespace Shapr3D.Converter.UnitTests.Services
             var rnd = new Random();
             var testSource = new Byte[500000];
             rnd.NextBytes(testSource);
-            var cts = new CancellationTokenSource();
-            cts.CancelAfter(10);
-
+            
             // When
-            var result = await Assert.ThrowsExceptionAsync<OperationCanceledException>(async () => _ = await _fileConverterService.ApplyConverterAndReportAsync(progress, cts, DummyConverter, testSource));
+            var result = await Assert.ThrowsExceptionAsync<FileConversionException>(async () => _ = await _fileConverterService.ApplyConverterAndReportAsync(progress, new CancellationTokenSource(), DummyConverterWithException, testSource));
 
             // Then
             Assert.AreNotEqual(100, progessStatus);
-            Assert.AreEqual("The operation was canceled.", result.Message);
-            Assert.IsTrue(cts.IsCancellationRequested);
+            Assert.AreEqual("Exception of type 'Shapr3D.Converter.Extensions.FileConversionException' was thrown.", result.Message);
         }
 
         private byte[] DummyConverter(byte[] input) => input;
+        private byte[] DummyConverterWithException(byte[] input) => throw  new Exception();
     }
 }
