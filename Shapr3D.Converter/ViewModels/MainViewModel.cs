@@ -1,5 +1,6 @@
 ﻿using Converter;
 using Shapr3D.Converter.Enums;
+using Shapr3D.Converter.Extensions;
 using Shapr3D.Converter.Infrastructure;
 using Shapr3D.Converter.Services;
 using Shapr3D.Converter.ViewModels.Interfaces;
@@ -208,12 +209,18 @@ namespace Shapr3D.Converter.ViewModels
             try
             {
                 conversionInfoOfSelectedFile.State = ConversionState.Converting;
-                var input = await _fileReaderService.ReadFileIntoByteArrayAsync(_selectedFile.OriginalPath);
+
+                // Store temporary the file content so if the same file has different conversion action, the file will not be read again.
+                if (_selectedFile.TemporaryFileContent == null || _selectedFile.TemporaryFileContent.Length == 0)
+                {
+                    _selectedFile.TemporaryFileContent = await _fileReaderService.ReadFileIntoByteArrayAsync(_selectedFile.OriginalPath);
+                }
+
                 var result = await _fileConverterService.ApplyConverterAndReportAsync(
                     progress,
                     conversionInfoOfSelectedFile.CancellationTokenSource,
                     ModelConverter.ConvertChunk,
-                    input);
+                    _selectedFile.TemporaryFileContent);
 
                 conversionInfoOfSelectedFile.ConvertedResult = result;
                 conversionInfoOfSelectedFile.State = ConversionState.Converted;
@@ -231,7 +238,7 @@ namespace Shapr3D.Converter.ViewModels
                 _selectedFile.ResetProperties(type);
                 await _dialogService.ShowOkModalDialog(_resourceLoader.GetString("ConfirmationMessage"), _resourceLoader.GetString("CancelledMessage"));
             }
-            catch (ConversionFailedException ex)
+            catch (FileConversionException ex)
             {
                 _selectedFile.ResetProperties(type);
                 await _dialogService.ShowExceptionModalDialog(ex, _resourceLoader.GetString("CouldNotConvertMessage"));

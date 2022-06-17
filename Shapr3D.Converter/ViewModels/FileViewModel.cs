@@ -46,6 +46,7 @@ namespace Shapr3D.Converter.ViewModels
         public Guid Id { get; }
         public string OriginalPath { get; }
         public string Name { get; }
+        public byte[] TemporaryFileContent { get; set; }
 
         public Dictionary<ConverterOutputType, ConversionInfo> ConversionInfos { get; } = new Dictionary<ConverterOutputType, ConversionInfo>();
         public ConversionInfo ObjConversionInfo => ConversionInfos[ConverterOutputType.Obj];
